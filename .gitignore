@@ -12,3 +12,5 @@ Cargo.lock
 # IntellijIDEA files
 .idea/
 *.iml
+
+.DS_Store

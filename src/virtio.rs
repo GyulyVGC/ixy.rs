@@ -285,7 +285,7 @@ impl VirtioDevice {
         if (host_features & required_features) != required_features {
             debug!("device features:   {:032b}", host_features);
             debug!("required features: {:032b}", required_features);
-            panic!("device does not support all required features");
+            // panic!("device does not support all required features");
         }
         debug!(
             "guest features before negotiation: {:032b}",
