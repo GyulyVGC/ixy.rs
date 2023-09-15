@@ -14,7 +14,7 @@ use crate::memory::{Dma, Packet, PACKET_HEADROOM};
 use crate::pci::{self, read_io16, read_io32, read_io8, write_io16, write_io32, write_io8};
 use crate::virtio_constants::*;
 use crate::{DeviceStats, IxyDevice, Mempool};
-use crate::sniffer::print_packet_info;
+use crate::sniffer::{PacketDirection, print_packet_info};
 
 // we're currently only supporting legacy Virtio via PCI so this is fixed (4.1.5.1.3.1)
 const QUEUE_ALIGNMENT: usize = 4096;
@@ -120,6 +120,9 @@ impl IxyDevice for VirtioDevice {
             // adjust buffer length to actual packet size
             buf.len = used.len as usize - mem::size_of::<virtio_net_hdr>();
 
+            // SNIFF PACKETS
+            print_packet_info(&buf[..], PacketDirection::Incoming);
+
             self.rx_bytes += buf.len as u64;
             self.rx_pkts += 1;
             buffer.push_back(buf);
@@ -181,7 +184,7 @@ impl IxyDevice for VirtioDevice {
         let mut idx = 0;
         while let Some(mut packet) = buffer.pop_front() {
             // SNIFF PACKETS
-            print_packet_info(&packet[..]);
+            print_packet_info(&packet[..], PacketDirection::Outgoing);
 
             // we cant use `tx_queue.free_descriptor_indices()` here due to borrowck
             while idx < self.tx_queue.size {

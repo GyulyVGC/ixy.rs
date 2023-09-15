@@ -1,8 +1,16 @@
+use std::fmt::{Display, Formatter};
 use etherparse::{Ethernet2Header, IpHeader, PacketHeaders, TransportHeader};
 use crate::Packet;
 
-pub fn print_packet_info(pkt_data: &[u8]) {
-    debug!("Outgoing packet sniffed!");
+#[derive(Debug)]
+pub enum PacketDirection {
+    Incoming,
+    Outgoing
+}
+
+pub fn print_packet_info(pkt_data: &[u8], direction: PacketDirection) {
+    // packet directionality
+    debug!("{:?} packet sniffed!", direction);
     // total size (headers + payload)
     debug!("    - Total size: {} B", pkt_data.len());
     if let Ok(headers) = PacketHeaders::from_ethernet_slice(pkt_data) {
