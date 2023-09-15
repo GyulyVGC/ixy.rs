@@ -1,8 +1,26 @@
-use etherparse::{PacketHeaders, TransportHeader};
+use etherparse::{Ethernet2Header, IpHeader, PacketHeaders, TransportHeader};
 use crate::Packet;
 
 pub fn print_packet_info(pkt_data: &[u8]) {
+    debug!("Outgoing packet sniffed!");
+    // size (headers + payload)
+    debug!("    - Total size: {} B", pkt_data.len());
     if let Ok(headers) = PacketHeaders::from_ethernet_slice(pkt_data) {
+        // payload
+        debug!("    - Payload: {}", String::from_utf8_lossy(headers.payload).into_owned());
+
+        // ip layer
+        if let Some(ip) = headers.ip {
+            let ip_layer = match ip {
+                IpHeader::Version4(_, _) => {"IPv4"}
+                IpHeader::Version6(_, _) => {"IPv6"}
+            };
+            debug!("    - Sniffed a {ip_layer} packet!");
+        } else {
+            debug!("    - Cannot parse packet's IP header")
+        }
+
+        // transport layer
         if let Some(transport) = headers.transport {
             let transport_layer = match transport {
                 TransportHeader::Udp(_) => {"UDP"}
@@ -10,11 +28,12 @@ pub fn print_packet_info(pkt_data: &[u8]) {
                 TransportHeader::Icmpv4(_) => {"ICMPv4"}
                 TransportHeader::Icmpv6(_) => {"ICMPv6"}
             };
-            debug!("Sniffed a {transport_layer} packet!");
+            debug!("    - Sniffed a {transport_layer} packet!");
         } else {
-            debug!("Cannot parse packet's transport header")
+            debug!("    - Cannot parse packet's transport header")
         }
+
     } else {
-        debug!("Cannot parse packet's headers...");
+        debug!("    - Cannot parse packet's headers...");
     }
 }
