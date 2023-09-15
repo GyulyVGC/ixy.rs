@@ -20,6 +20,7 @@ mod vfio;
 mod virtio;
 #[rustfmt::skip]
 mod virtio_constants;
+mod sniffer;
 
 use self::interrupts::*;
 use self::ixgbe::*;
