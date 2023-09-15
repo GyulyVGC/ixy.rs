@@ -3,11 +3,12 @@ use crate::Packet;
 
 pub fn print_packet_info(pkt_data: &[u8]) {
     debug!("Outgoing packet sniffed!");
-    // size (headers + payload)
+    // total size (headers + payload)
     debug!("    - Total size: {} B", pkt_data.len());
     if let Ok(headers) = PacketHeaders::from_ethernet_slice(pkt_data) {
         // payload
-        debug!("    - Payload: {}", String::from_utf8_lossy(headers.payload).into_owned());
+        debug!("    - Payload size: {}", headers.payload.len());
+        debug!("    - Payload content: {}", String::from_utf8_lossy(headers.payload).into_owned());
 
         // ip layer
         if let Some(ip) = headers.ip {
@@ -15,7 +16,7 @@ pub fn print_packet_info(pkt_data: &[u8]) {
                 IpHeader::Version4(_, _) => {"IPv4"}
                 IpHeader::Version6(_, _) => {"IPv6"}
             };
-            debug!("    - Sniffed a {ip_layer} packet!");
+            debug!("    - IP version: {ip_layer}");
         } else {
             debug!("    - Cannot parse packet's IP header")
         }
@@ -28,7 +29,7 @@ pub fn print_packet_info(pkt_data: &[u8]) {
                 TransportHeader::Icmpv4(_) => {"ICMPv4"}
                 TransportHeader::Icmpv6(_) => {"ICMPv6"}
             };
-            debug!("    - Sniffed a {transport_layer} packet!");
+            debug!("    - Transport protocol {transport_layer}");
         } else {
             debug!("    - Cannot parse packet's transport header")
         }
