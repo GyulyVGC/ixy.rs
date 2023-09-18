@@ -211,9 +211,9 @@ pub fn ixy_init(
     let device_id = read_hex(&mut device_file)?;
     let class_id = read_io32(&mut config_file, 8)? >> 24;
 
-    // if class_id != 2 {
-    //     return Err(format!("device {} is not a network card", pci_addr).into());
-    // }
+    if class_id != 2 {
+        return Err(format!("device {} is not a network card", pci_addr).into());
+    }
 
     if vendor_id == 0x1af4 && device_id == 0x1000 {
         // `device_id == 0x1041` would be for non-transitional devices which we don't support atm
