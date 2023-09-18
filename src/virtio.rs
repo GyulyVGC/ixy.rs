@@ -104,17 +104,28 @@ impl IxyDevice for VirtioDevice {
             }
 
             let used =
-                &self.rx_queue.used[self.rx_queue.last_used_idx.0 % self.rx_queue.size].clone();
+                self.rx_queue.used[self.rx_queue.last_used_idx.0 % self.rx_queue.size].clone();
             self.rx_queue.last_used_idx += Wrapping(1);
 
+            let descriptors: &mut [_] = self.rx_queue.descriptors_mut();
+            let desc = &mut descriptors[used.id as usize];
+            let desc_flags = desc.flags;
+            let desc_next = desc.next;
+            if desc_flags & VIRTQ_DESC_F_NEXT != 0  {
+                let next_idx = desc_next as usize;
+                // println!("Freeing {}", next_idx);
+                descriptors[next_idx] = VirtqDesc::default();
+            }
+
             // mark used descriptor as unused again
-            let desc = &mut self.rx_queue.descriptors_mut()[used.id as usize];
-            assert_eq!(
-                desc.flags, VIRTQ_DESC_F_WRITE,
-                "unsupported flags on rx descriptor: {:x}",
-                desc.flags
-            );
-            desc.addr = 0;
+            descriptors[used.id as usize] = VirtqDesc::default();
+            // let desc = &mut self.rx_queue.descriptors_mut()[used.id as usize];
+            // assert_eq!(
+            //     desc.flags, VIRTQ_DESC_F_WRITE,
+            //     "unsupported flags on rx descriptor: {:x}",
+            //     desc.flags
+            // );
+            // desc.addr = 0;
 
             let mut buf = self.rx_inflight.pop_front().unwrap();
             // adjust buffer length to actual packet size
@@ -130,10 +141,11 @@ impl IxyDevice for VirtioDevice {
 
         // add new descriptors to the available ring so the device can fill those up
         let mut queued = 0;
-        for idx in 0..self.rx_queue.size {
-            let desc = &mut self.rx_queue.descriptors_mut()[idx as usize];
-            if desc.addr != 0 {
-                continue;
+        for idx in 0..(self.rx_queue.size - 1) {
+            let desc_addr = self.rx_queue.descriptors_mut()[idx as usize].addr;
+            let desc_next_addr = self.rx_queue.descriptors_mut()[(idx + 1) as usize].addr;
+            if desc_addr != 0 || desc_next_addr != 0 {
+                continue
             }
 
             let buf = memory::alloc_pkt(
@@ -142,14 +154,21 @@ impl IxyDevice for VirtioDevice {
             )
             .expect("rx memory pool exhausted");
 
-            *desc = VirtqDesc {
-                len: buf.len as u32 + mem::size_of::<virtio_net_hdr>() as u32,
+            self.rx_queue.descriptors_mut()[idx as usize] = VirtqDesc {
+                len: mem::size_of::<virtio_net_hdr>() as u32,
                 addr: buf.get_phys_addr() - mem::size_of::<virtio_net_hdr>(),
+                flags: VIRTQ_DESC_F_WRITE | VIRTQ_DESC_F_NEXT,
+                next: idx + 1,
+            };
+
+            self.rx_queue.descriptors_mut()[(idx + 1) as usize] = VirtqDesc {
+                len: buf.len as u32,
+                addr: buf.get_phys_addr(),
                 flags: VIRTQ_DESC_F_WRITE,
                 next: 0,
             };
 
-            let avail_idx = (self.rx_queue.available.idx + Wrapping(queued)).0 % self.rx_queue.size;
+            let avail_idx = (self.rx_queue.available.idx).0 % self.rx_queue.size;
             self.rx_queue.available[avail_idx] = idx;
 
             queued += 1;
@@ -173,6 +192,10 @@ impl IxyDevice for VirtioDevice {
         while self.tx_queue.last_used_idx != self.tx_queue.used.idx {
             let used_idx =
                 self.tx_queue.used[self.tx_queue.last_used_idx.0 % self.tx_queue.size].id;
+            if self.tx_queue.descriptors_mut()[used_idx as usize].flags == VIRTQ_DESC_F_NEXT  {
+                let next_idx = self.tx_queue.descriptors()[used_idx as usize].next;
+                self.tx_queue.descriptors_mut()[next_idx as usize] = VirtqDesc::default();
+            }
             self.tx_queue.descriptors_mut()[used_idx as usize] = VirtqDesc::default();
             self.tx_queue.last_used_idx += Wrapping(1);
             mem::drop(self.tx_inflight.pop_front());
@@ -187,16 +210,15 @@ impl IxyDevice for VirtioDevice {
             print_packet_info(&packet[..], PacketDirection::Outgoing);
 
             // we cant use `tx_queue.free_descriptor_indices()` here due to borrowck
-            while idx < self.tx_queue.size {
-                let desc = &self.tx_queue.descriptors()[idx as usize];
-                if desc.addr == 0 {
+            while idx < self.tx_queue.size - 1 {
+                if self.tx_queue.descriptors()[idx as usize].addr == 0 && self.tx_queue.descriptors()[(idx + 1) as usize].addr == 0 {
                     break;
                 }
                 idx += 1;
             }
 
             // queue is full; put back the packet we've taken out
-            if idx == self.tx_queue.size {
+            if idx == self.tx_queue.size - 1 {
                 buffer.push_front(packet);
                 break;
             }
@@ -208,8 +230,15 @@ impl IxyDevice for VirtioDevice {
                 .copy_from_slice(net_header);
 
             self.tx_queue.descriptors_mut()[idx as usize] = VirtqDesc {
-                len: (packet.len() + net_header.len()) as u32,
+                len: net_header.len() as u32,
                 addr: packet.get_phys_addr() - net_header.len(),
+                flags: VIRTQ_DESC_F_NEXT,
+                next: idx + 1,
+            };
+
+            self.tx_queue.descriptors_mut()[(idx + 1) as usize] = VirtqDesc {
+                len: packet.len() as u32,
+                addr: packet.get_phys_addr(),
                 flags: 0,
                 next: 0,
             };
@@ -287,8 +316,8 @@ impl VirtioDevice {
             | (1 << VIRTIO_NET_F_GUEST_CSUM) // we can handle packets with invalid checksums
             | (1 << VIRTIO_NET_F_CTRL_VQ) // enable the control queue
             | (1 << VIRTIO_NET_F_CTRL_RX) // required to enable promiscuous mode
-            | (1 << VIRTIO_NET_F_MAC) // required to read MAC address
-            | (1 << VIRTIO_F_ANY_LAYOUT); // we don't make assumptions about message framing
+            | (1 << VIRTIO_NET_F_MAC); // required to read MAC address
+            // | (1 << VIRTIO_F_ANY_LAYOUT); // we don't make assumptions about message framing
         if (host_features & required_features) != required_features {
             debug!("device features:   {:032b}", host_features);
             debug!("required features: {:032b}", required_features);
