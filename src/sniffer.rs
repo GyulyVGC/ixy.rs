@@ -43,7 +43,7 @@ pub fn print_packet_info(pkt_data: &[u8], direction: PacketDirection) {
                     dst_port = h.destination_port;
                     "UDP"
                 }
-                TransportHeader::Tcp(_) => {
+                TransportHeader::Tcp(h) => {
                     src_port = h.source_port;
                     dst_port = h.destination_port;
                     "TCP"
