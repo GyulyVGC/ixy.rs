@@ -56,11 +56,11 @@ pub fn print_packet_info(pkt_data: &[u8], direction: PacketDirection) {
             println!("{:?} packet: {:^6}B | {:^6} | {:^6}", direction, size, ip_layer, transport_layer);
             println!("From: {}/{}", src_ip, src_port);
             println!("To:   {}/{}", dst_ip, dst_port);
+            // println!("[Payload start]");
+            // println!("{}", String::from_utf8_lossy(headers.payload).into_owned());
+            // println!("[Payload end]");
+            println!("{}","-".repeat(42));
         }
-        // println!("[Payload start]");
-        // println!("{}", String::from_utf8_lossy(headers.payload).into_owned());
-        // println!("[Payload end]");
-        println!("{}","-".repeat(42));
     } else {
         debug!("Cannot parse packet's headers...");
     }
