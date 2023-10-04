@@ -53,7 +53,7 @@ pub fn main() {
 
     loop {
         forward(&mut buffer, &mut *dev1, 0, &mut *dev2, 0);
-        forward(&mut buffer, &mut *dev2, 0, &mut *dev1, 0);
+        //forward(&mut buffer, &mut *dev2, 0, &mut *dev1, 0);
 
         // don't poll the time unnecessarily
         if counter & 0xfff == 0 {
