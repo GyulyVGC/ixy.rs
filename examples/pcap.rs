@@ -45,6 +45,8 @@ pub fn main() -> Result<(), io::Error> {
     pcap.write_u32::<LE>(1)?; // network: Ethernet
 
     let mut dev = ixy_init(&pci_addr, 1, 1, 0).unwrap();
+    let mac = dev.get_mac_addr();
+    println!("MAC address (decimal): {:?}", mac);
 
     let mut buffer: VecDeque<Packet> = VecDeque::with_capacity(BATCH_SIZE);
     while n_packets != Some(0) {
