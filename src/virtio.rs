@@ -14,7 +14,7 @@ use crate::memory::{Dma, Packet, PACKET_HEADROOM};
 use crate::pci::{self, read_io16, read_io32, read_io8, write_io16, write_io32, write_io8};
 use crate::virtio_constants::*;
 use crate::{DeviceStats, IxyDevice, Mempool};
-use crate::sniffer::{PacketDirection, print_packet_info};
+use crate::dev::sniffer::{PacketDirection, print_packet_info};
 
 // we're currently only supporting legacy Virtio via PCI so this is fixed (4.1.5.1.3.1)
 const QUEUE_ALIGNMENT: usize = 4096;
