@@ -49,9 +49,6 @@ fn forward(
     let num_rx = rx_dev.rx_batch(0, buffer, BATCH_SIZE);
 
     if num_rx > 0 {
-        tx_dev.tx_batch(0, buffer);
-
-        // drop packets if they haven't been sent out
-        buffer.drain(..);
+        tx_dev.tx_batch_busy_wait(0, buffer);
     }
 }
