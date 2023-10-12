@@ -5,6 +5,7 @@ use std::net::TcpStream;
 use std::process;
 use std::time::{Duration};
 use etherparse::{IpHeader, PacketHeaders, TransportHeader};
+use log::debug;
 
 use ixy::memory::{alloc_pkt_batch, Mempool, Packet};
 use ixy::*;
@@ -127,6 +128,7 @@ fn receive(pci_addr: String) {
         if num_rx > 0 {
             for packet in buffer {
                 let socket = get_socket(&packet[..]);
+                debug!("Socket used: {}", socket);
                 if !streams.contains_key(&socket) {
                     streams.insert(socket.clone(), TcpStream::connect(&socket).unwrap());
                 }
