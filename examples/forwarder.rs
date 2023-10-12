@@ -156,7 +156,7 @@ fn get_socket(packet: &[u8]) -> String {
                 IpHeader::Version6(h, _) => format_ipv6_address(h.destination),
             }
         } else {
-            ""
+            "".to_string()
         };
         let port = if let Some(transport) = headers.transport {
             match transport {
@@ -166,7 +166,7 @@ fn get_socket(packet: &[u8]) -> String {
                 TransportHeader::Icmpv6(_) => {0}
             }
         } else {
-            ""
+            "".to_string()
         };
         return format!("{}:{}", ip_addr, port);
     }
