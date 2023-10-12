@@ -90,7 +90,7 @@ fn transmit(pci_addr: String) {
 
         alloc_pkt_batch(&pool, &mut buffer, NUM_PACKETS, PACKET_SIZE);
 
-        let mut id: u8 = 29;
+        let mut id: u8 = NUM_PACKETS as u8;
         for p in buffer.iter_mut() {
             for (i, data) in pkt_data.iter().enumerate() {
                 p[i] = *data;
@@ -100,7 +100,7 @@ fn transmit(pci_addr: String) {
             for (j, char) in id_str.chars().enumerate() {
                 p[49 + j] = char as u8;
             }
-            id = id.wrapping_add(1);
+            id = id.wrapping_add_signed(-1);
             println!("{}", id);
             let checksum = calc_ipv4_checksum(&p[14..14 + 20]);
             // Calculated checksum is little-endian; checksum field is big-endian
