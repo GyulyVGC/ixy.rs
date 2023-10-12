@@ -128,7 +128,7 @@ fn receive(pci_addr: String) {
         if num_rx > 0 {
             for packet in buffer {
                 let socket = get_socket(&packet[..]);
-                debug!("Socket used: {}", socket);
+                println!("Socket used: {}", socket);
                 if !streams.contains_key(&socket) {
                     streams.insert(socket.clone(), TcpStream::connect(&socket).unwrap());
                 }
