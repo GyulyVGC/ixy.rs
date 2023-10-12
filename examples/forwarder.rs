@@ -8,7 +8,6 @@ use etherparse::{IpHeader, PacketHeaders, TransportHeader};
 
 use ixy::memory::{alloc_pkt_batch, Mempool, Packet};
 use ixy::*;
-use simple_logger::SimpleLogger;
 use ixy::dev::sniffer::{format_ipv4_address, format_ipv6_address};
 
 // number of packets sent simultaneously by our driver
@@ -19,8 +18,6 @@ const NUM_PACKETS: usize = 2048;
 const PACKET_SIZE: usize = 60;
 
 pub fn main() {
-    SimpleLogger::new().init().unwrap();
-
     let mut args = env::args();
     args.next();
 
