@@ -52,10 +52,10 @@ pub fn print_packet_info(pkt_data: &[u8], direction: PacketDirection) {
         };
         if src_ip.len() + dst_ip.len() > 0 {
             println!("{:?} packet: {:^6}B | {:^6} | {:^6}", direction, size, ip_layer, transport_layer);
-            println!("From: {}/{}", src_ip, src_port);
-            println!("To:   {}/{}", dst_ip, dst_port);
+            println!("From: {}:{}", src_ip, src_port);
+            println!("To:   {}:{}", dst_ip, dst_port);
             // println!("[Payload start]");
-            // println!("{}", String::from_utf8_lossy(headers.payload).into_owned());
+            println!("Payload: {}", String::from_utf8_lossy(headers.payload).into_owned());
             // println!("[Payload end]");
             println!("{}","-".repeat(42));
         }

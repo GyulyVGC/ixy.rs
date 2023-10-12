@@ -72,7 +72,7 @@ fn transmit(pci_addr: String) {
         0x00, 0x00, 0x00, 0x00,                     // id, flags, fragmentation
         0x40, 0x11, 0x00, 0x00,                     // TTL (64), protocol (UDP), checksum
         8, 8, 8, 8,                                 // src ip
-        192, 168, 1, 251,                           // dst ip
+        127, 0, 0, 1,                           // dst ip
         0x00, 0x08, 0x03, 0xe7,                     // src and dst ports (8 -> 999)
         ((PACKET_SIZE - 20 - 14) >> 8) as u8,       // udp len excluding ip & ethernet, high byte
         ((PACKET_SIZE - 20 - 14) & 0xFF) as u8,     // udp len excluding ip & ethernet, low byte
