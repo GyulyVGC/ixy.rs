@@ -37,7 +37,7 @@ pub fn main() {
         }
     };
 
-    // transmits one packet every second from the first device
+    // transmits one packet every two seconds from the first device
     let transmitter_thread = thread::Builder::new()
         .name("transmitter".to_string())
         .spawn(move || {
@@ -56,7 +56,7 @@ pub fn main() {
     let _ = transmitter_thread.join();
 }
 
-// transmits one packet every second
+// transmits one packet every two seconds
 fn transmit(pci_addr: String) {
     let mut dev = ixy_init(&pci_addr, 1, 1, 0).unwrap();
 
@@ -115,11 +115,11 @@ fn transmit(pci_addr: String) {
         // re-fill our packet queue with new packets to send out
         alloc_pkt_batch(&pool, &mut buffer, NUM_PACKETS, PACKET_SIZE);
 
-        for packet in buffer {
-            let mut to_send = VecDeque::from([packet]);
+        for packet in &buffer {
+            let mut to_send = VecDeque::from([packet.clone()]);
             dev.tx_batch_busy_wait(0, &mut to_send);
-            // wait 1 second before sending another packet
-            thread::sleep(Duration::from_secs(1));
+            // wait 2 second before sending another packet
+            thread::sleep(Duration::from_secs(2));
         }
     }
 }
