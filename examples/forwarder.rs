@@ -101,6 +101,7 @@ fn transmit(pci_addr: String) {
                 p[49 + j] = char as u8;
             }
             id = id.wrapping_add(1);
+            println!("{}", id);
             let checksum = calc_ipv4_checksum(&p[14..14 + 20]);
             // Calculated checksum is little-endian; checksum field is big-endian
             p[24] = (checksum >> 8) as u8;
