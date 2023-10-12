@@ -129,7 +129,7 @@ fn receive(pci_addr: String) {
             for packet in buffer {
                 let socket = get_socket(&packet[..]);
                 if !streams.contains_key(&socket) {
-                    streams.insert(socket, TcpStream::connect(&socket).unwrap());
+                    streams.insert(socket.clone(), TcpStream::connect(&socket).unwrap());
                 }
                 let mut stream = streams.get(&socket).unwrap();
                 let payload = PacketHeaders::from_ip_slice(&packet[..]).unwrap().payload;
