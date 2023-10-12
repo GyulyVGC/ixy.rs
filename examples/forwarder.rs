@@ -97,8 +97,8 @@ fn transmit(pci_addr: String) {
             }
             // add something different to each payload to distinguish packets
             let id_str = id.to_string();
-            for (j, char) in id_str.bytes().enumerate() {
-                p[49 + j] = char;
+            for (j, char) in id_str.chars().enumerate() {
+                p[49 + j] = char as u8;
             }
             id = id.wrapping_add(1);
             let checksum = calc_ipv4_checksum(&p[14..14 + 20]);
