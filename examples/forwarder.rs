@@ -96,7 +96,7 @@ fn transmit(pci_addr: String) {
                 p[i] = *data;
             }
             // add something different to each payload to distinguish this packet
-            p[49] = format!("{:b}", id).parse().unwrap();
+            p[49] = id;
             id = id.wrapping_add(1);
             let checksum = calc_ipv4_checksum(&p[14..14 + 20]);
             // Calculated checksum is little-endian; checksum field is big-endian
