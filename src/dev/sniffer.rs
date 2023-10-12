@@ -66,7 +66,7 @@ pub fn print_packet_info(pkt_data: &[u8], direction: PacketDirection) {
     }
 }
 
-fn format_ipv4_address(address: [u8; 4]) -> String {
+pub fn format_ipv4_address(address: [u8; 4]) -> String {
     format!("{:?}", address)
         .replace('[', "")
         .replace(']', "")
@@ -87,7 +87,7 @@ fn format_ipv4_address(address: [u8; 4]) -> String {
 /// let result = ipv6_from_long_dec_to_short_hex([255,10,10,255,0,0,0,0,28,4,4,28,255,1,0,0]);
 /// assert_eq!(result, "ff0a:aff::1c04:41c:ff01:0".to_string());
 /// ```
-fn format_ipv6_address(ipv6_long: [u8; 16]) -> String {
+pub fn format_ipv6_address(ipv6_long: [u8; 16]) -> String {
     //from hex to dec, paying attention to the correct number of digits
     let mut ipv6_hex = String::new();
     for i in 0..=15 {
