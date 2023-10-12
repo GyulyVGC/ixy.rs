@@ -13,7 +13,7 @@ use ixy::dev::sniffer::{format_ipv4_address, format_ipv6_address};
 // number of packets sent simultaneously by our driver
 const BATCH_SIZE: usize = 1;
 // number of packets in our mempool
-const NUM_PACKETS: usize = 2048;
+const NUM_PACKETS: usize = 256;
 // size of our packets
 const PACKET_SIZE: usize = 60;
 
