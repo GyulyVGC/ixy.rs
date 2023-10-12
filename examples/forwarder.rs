@@ -5,6 +5,7 @@ use std::net::TcpStream;
 use std::process;
 use std::time::{Duration};
 use etherparse::{IpHeader, PacketHeaders, TransportHeader};
+use colored::Colorize;
 
 use ixy::memory::{alloc_pkt_batch, Mempool, Packet};
 use ixy::*;
@@ -101,7 +102,7 @@ fn transmit(pci_addr: String) {
                 p[49 + j] = char as u8;
             }
             id = id.wrapping_add_signed(-1);
-            println!("{}", id);
+
             let checksum = calc_ipv4_checksum(&p[14..14 + 20]);
             // Calculated checksum is little-endian; checksum field is big-endian
             p[24] = (checksum >> 8) as u8;
@@ -138,14 +139,15 @@ fn receive(pci_addr: String) {
         if num_rx > 0 {
             for packet in buffer {
                 let socket = get_socket(&packet[..]);
-                println!("-----Trying connection to: {}", socket);
                 let new_stream = TcpStream::connect(&socket);
                 if let Ok(mut stream) = new_stream {
-                    println!("-----Success! Sending data to {}", socket);
+                    println!(format!("Success! Sending data to {}", socket).green());
+                    println!("{}","-".repeat(42));
                     let payload = PacketHeaders::from_ethernet_slice(&packet[..]).unwrap().payload;
                     stream.write(payload).unwrap();
                 } else {
-                    println!("-----Failure! Skipping this socket...");
+                    println!("-----Failure! Skipping this socket...".red());
+                    println!("{}","-".repeat(42));
                     continue;
                 }
             }
