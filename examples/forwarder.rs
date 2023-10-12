@@ -129,7 +129,8 @@ fn receive(pci_addr: String) {
 
         if num_rx > 0 {
             for packet in buffer {
-                let socket = get_socket(&packet[..]);
+                //let socket = get_socket(&packet[..]);
+                let socket = "192.168.1.251:999";
                 if !streams.contains_key(&socket) {
                     println!("-----Trying connection to: {}", socket);
                     let new_stream = TcpStream::connect(&socket);
