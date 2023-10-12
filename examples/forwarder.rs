@@ -133,7 +133,7 @@ fn receive(pci_addr: String) {
                     streams.insert(socket.clone(), TcpStream::connect(&socket).unwrap());
                 }
                 let mut stream = streams.get(&socket).unwrap();
-                let payload = PacketHeaders::from_ip_slice(&packet[..]).unwrap().payload;
+                let payload = PacketHeaders::from_ethernet_slice(&packet[..]).unwrap().payload;
                 stream.write(payload).unwrap();
             }
         }
@@ -144,7 +144,7 @@ fn receive(pci_addr: String) {
 }
 
 fn get_socket(packet: &[u8]) -> String {
-    if let Ok(headers) = PacketHeaders::from_ip_slice(packet) {
+    if let Ok(headers) = PacketHeaders::from_ethernet_slice(packet) {
         let ip_addr = match headers.ip.unwrap() {
             IpHeader::Version4(h, _) => {format_ipv4_address(h.destination)}
             IpHeader::Version6(h, _) => {format_ipv6_address(h.destination)}
