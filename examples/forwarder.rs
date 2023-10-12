@@ -130,8 +130,8 @@ fn receive(pci_addr: String) {
     let mut dev = ixy_init(&pci_addr, 1, 1, 0).unwrap();
 
     loop {
-        // wait 1 second before receiving other packets, to not poll unnecessarily
-        thread::sleep(Duration::from_secs(1));
+        // wait 0.5 second before receiving other packets, to not poll unnecessarily
+        thread::sleep(Duration::from_millis(500));
 
         let mut buffer: VecDeque<Packet> = VecDeque::with_capacity(BATCH_SIZE);
         let num_rx = dev.rx_batch(0, &mut buffer, BATCH_SIZE);
@@ -141,12 +141,12 @@ fn receive(pci_addr: String) {
                 let socket = get_socket(&packet[..]);
                 let new_stream = TcpStream::connect(&socket);
                 if let Ok(mut stream) = new_stream {
-                    println!("{}", format!("Success! Sending data to {}", socket).green());
+                    println!("{}", format!("Attempt to connect to {}\nSuccess! Sending data to {}", socket, socket).green());
                     println!("{}","-".repeat(42));
                     let payload = PacketHeaders::from_ethernet_slice(&packet[..]).unwrap().payload;
                     stream.write(payload).unwrap();
                 } else {
-                    println!("{}", format!("Failure! {}", new_stream.err().unwrap()).red());
+                    println!("{}", format!("Attempt to connect to {}\nFailure! {}", socket, new_stream.err().unwrap()).red());
                     println!("{}","-".repeat(42));
                     continue;
                 }

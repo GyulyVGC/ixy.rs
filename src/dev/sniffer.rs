@@ -1,4 +1,4 @@
-use colored::{ColoredString, Colorize};
+use colored::{Colorize};
 use etherparse::{IpHeader, PacketHeaders, TransportHeader};
 
 #[derive(Debug, Eq, PartialEq)]
