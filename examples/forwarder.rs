@@ -90,7 +90,7 @@ fn transmit(pci_addr: String) {
 
         alloc_pkt_batch(&pool, &mut buffer, NUM_PACKETS, PACKET_SIZE);
 
-        let mut id: u8 = 9;
+        let mut id: u8 = 29;
         for p in buffer.iter_mut() {
             for (i, data) in pkt_data.iter().enumerate() {
                 p[i] = *data;
