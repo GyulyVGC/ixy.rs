@@ -1,6 +1,4 @@
-use std::fmt::{Display, Formatter};
-use etherparse::{Ethernet2Header, IpHeader, PacketHeaders, TransportHeader};
-use crate::Packet;
+use etherparse::{IpHeader, PacketHeaders, TransportHeader};
 
 #[derive(Debug)]
 pub enum PacketDirection {

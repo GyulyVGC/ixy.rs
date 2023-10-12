@@ -3,8 +3,7 @@ use std::{env, thread};
 use std::io::Write;
 use std::net::TcpStream;
 use std::process;
-use std::time::{Duration, Instant};
-use byteorder::{ByteOrder, LittleEndian};
+use std::time::{Duration};
 use etherparse::{IpHeader, PacketHeaders, TransportHeader};
 
 use ixy::memory::{alloc_pkt_batch, Mempool, Packet};
@@ -56,7 +55,7 @@ pub fn main() {
     thread::Builder::new()
         .name("receiver".to_string())
         .spawn(move || {
-            receive(dev2);
+            receive(&mut dev2);
         })
         .unwrap();
 }
