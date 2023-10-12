@@ -146,7 +146,7 @@ fn receive(pci_addr: String) {
                     let payload = PacketHeaders::from_ethernet_slice(&packet[..]).unwrap().payload;
                     stream.write(payload).unwrap();
                 } else {
-                    println!("{}", format!("-----Failure! {}", new_stream.err().unwrap()).red());
+                    println!("{}", format!("Failure! {}", new_stream.err().unwrap()).red());
                     println!("{}","-".repeat(42));
                     continue;
                 }

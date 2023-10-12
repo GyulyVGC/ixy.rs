@@ -1,6 +1,7 @@
+use colored::{ColoredString, Colorize};
 use etherparse::{IpHeader, PacketHeaders, TransportHeader};
 
-#[derive(Debug)]
+#[derive(Debug, Eq, PartialEq)]
 pub enum PacketDirection {
     Incoming,
     Outgoing
@@ -11,6 +12,11 @@ pub fn print_packet_info(pkt_data: &[u8], direction: PacketDirection) {
     let mut dst_port = 0;
     let mut src_ip = String::new();
     let mut dst_ip = String::new();
+    let color = if direction.eq(&PacketDirection::Outgoing) {
+        "blue"
+    } else {
+        "purple"
+    };
     // total size (headers + payload)
     let size = pkt_data.len();
     if let Ok(headers) = PacketHeaders::from_ethernet_slice(pkt_data) {
@@ -51,7 +57,7 @@ pub fn print_packet_info(pkt_data: &[u8], direction: PacketDirection) {
             "////"
         };
         if src_ip.len() + dst_ip.len() > 0 {
-            println!("{:?} packet: {:^6}B | {:^6} | {:^6}", direction, size, ip_layer, transport_layer);
+            println!("{}", format!("{:?} packet: {:^6}B | {:^6} | {:^6}", direction, size, ip_layer, transport_layer).color(color));
             println!("From: {}:{}", src_ip, src_port);
             println!("To:   {}:{}", dst_ip, dst_port);
             // println!("[Payload start]");
