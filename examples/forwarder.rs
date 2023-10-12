@@ -141,12 +141,12 @@ fn receive(pci_addr: String) {
                 let socket = get_socket(&packet[..]);
                 let new_stream = TcpStream::connect(&socket);
                 if let Ok(mut stream) = new_stream {
-                    println!(format!("Success! Sending data to {}", socket).green());
+                    println!("{}", format!("Success! Sending data to {}", socket).green());
                     println!("{}","-".repeat(42));
                     let payload = PacketHeaders::from_ethernet_slice(&packet[..]).unwrap().payload;
                     stream.write(payload).unwrap();
                 } else {
-                    println!("-----Failure! Skipping this socket...".red());
+                    println!("{}", format!("-----Failure! {}", new_stream.err().unwrap()).red());
                     println!("{}","-".repeat(42));
                     continue;
                 }
