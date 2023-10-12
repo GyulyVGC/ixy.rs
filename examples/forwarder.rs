@@ -133,7 +133,7 @@ fn receive(pci_addr: String) {
                 }
                 let mut stream = streams.get(&socket).unwrap();
                 let payload = PacketHeaders::from_ip_slice(&packet[..]).unwrap().payload;
-                stream.write(payload);
+                stream.write(payload).unwrap();
             }
         }
 
