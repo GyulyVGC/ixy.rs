@@ -40,14 +40,11 @@ pub fn main() {
         }
     };
 
-    let mut dev1 = ixy_init(&pci_addr_1, 1, 1, 0).unwrap();
-    let mut dev2 = ixy_init(&pci_addr_2, 1, 1, 0).unwrap();
-
     // transmits one packet every second from the first device
     thread::Builder::new()
         .name("transmitter".to_string())
         .spawn(move || {
-            transmit(&mut *dev1);
+            transmit(pci_addr_1);
         })
         .unwrap();
 
@@ -55,13 +52,15 @@ pub fn main() {
     thread::Builder::new()
         .name("receiver".to_string())
         .spawn(move || {
-            receive(&mut dev2);
+            receive(pci_addr_2);
         })
         .unwrap();
 }
 
 // transmits one packet every second
-fn transmit(dev: &mut dyn IxyDevice) {
+fn transmit(pci_addr: String) {
+    let mut dev = ixy_init(&pci_addr, 1, 1, 0).unwrap();
+
     // packet to send
     #[rustfmt::skip]
         let mut pkt_data = [
@@ -118,7 +117,9 @@ fn transmit(dev: &mut dyn IxyDevice) {
 }
 
 // receives packets and writes them to the corresponding socket
-fn receive(dev: &mut dyn IxyDevice) {
+fn receive(pci_addr: String) {
+    let mut dev = ixy_init(&pci_addr, 1, 1, 0).unwrap();
+
     let mut streams: HashMap<String, TcpStream> = HashMap::new();
     loop {
         let mut buffer: VecDeque<Packet> = VecDeque::with_capacity(BATCH_SIZE);
