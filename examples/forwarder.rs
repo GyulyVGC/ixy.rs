@@ -97,7 +97,7 @@ fn transmit(pci_addr: String) {
             }
             // add something different to each payload to distinguish this packet
             p[49] = id;
-            id.wrapping_add(1);
+            id = id.wrapping_add(1);
             let checksum = calc_ipv4_checksum(&p[14..14 + 20]);
             // Calculated checksum is little-endian; checksum field is big-endian
             p[24] = (checksum >> 8) as u8;
@@ -138,7 +138,6 @@ fn receive(pci_addr: String) {
                     println!("-----Success! Sending data to {}", socket);
                     let payload = PacketHeaders::from_ethernet_slice(&packet[..]).unwrap().payload;
                     stream.write(payload).unwrap();
-                    stream.flush();
                 } else {
                     println!("-----Failure! Skipping this socket...");
                     continue;
