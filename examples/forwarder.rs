@@ -109,16 +109,18 @@ fn transmit(pci_addr: String) {
         }
     }
 
-    let mut buffer: VecDeque<Packet> = VecDeque::with_capacity(BATCH_SIZE);
+    let mut buffer: VecDeque<Packet> = VecDeque::with_capacity(NUM_PACKETS);
 
     loop {
         // re-fill our packet queue with new packets to send out
-        alloc_pkt_batch(&pool, &mut buffer, BATCH_SIZE, PACKET_SIZE);
+        alloc_pkt_batch(&pool, &mut buffer, NUM_PACKETS, PACKET_SIZE);
 
-        dev.tx_batch_busy_wait(0, &mut buffer);
-
-        // wait 1 second before sending another packet
-        thread::sleep(Duration::from_secs(1));
+        for packet in buffer {
+            let mut to_send = VecDeque::from([packet]);
+            dev.tx_batch_busy_wait(0, &mut to_send);
+            // wait 1 second before sending another packet
+            thread::sleep(Duration::from_secs(1));
+        }
     }
 }
 
