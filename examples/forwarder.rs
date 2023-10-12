@@ -82,7 +82,7 @@ fn transmit(pci_addr: String) {
     ];
     pkt_data[6..12].clone_from_slice(&dev.get_mac_addr());
 
-    let pool = Mempool::allocate(NUM_PACKETS, 0).unwrap();
+    let pool = Mempool::allocate(NUM_PACKETS*2, 0).unwrap();
 
     // pre-fill all packet buffer in the pool with data and return them to the packet pool
     {
