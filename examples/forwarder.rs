@@ -41,7 +41,7 @@ pub fn main() {
     };
 
     // transmits one packet every second from the first device
-    thread::Builder::new()
+    let transmitter_thread = thread::Builder::new()
         .name("transmitter".to_string())
         .spawn(move || {
             transmit(pci_addr_1);
@@ -55,6 +55,8 @@ pub fn main() {
             receive(pci_addr_2);
         })
         .unwrap();
+
+    transmitter_thread.join();
 }
 
 // transmits one packet every second
