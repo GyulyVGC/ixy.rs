@@ -59,8 +59,11 @@ pub fn print_packet_info(pkt_data: &[u8], direction: PacketDirection) {
             // println!("[Payload end]");
             println!("{}","-".repeat(42));
         }
+        else {
+            println!("Invalid headers...");
+        }
     } else {
-        debug!("Cannot parse packet's headers...");
+        println!("Cannot parse packet's headers...");
     }
 }
 
