@@ -5,7 +5,6 @@ use std::net::TcpStream;
 use std::process;
 use std::time::{Duration};
 use etherparse::{IpHeader, PacketHeaders, TransportHeader};
-use log::debug;
 
 use ixy::memory::{alloc_pkt_batch, Mempool, Packet};
 use ixy::*;
@@ -54,7 +53,7 @@ pub fn main() {
         })
         .unwrap();
 
-    transmitter_thread.join();
+    let _ = transmitter_thread.join();
 }
 
 // transmits one packet every second
@@ -133,7 +132,7 @@ fn receive(pci_addr: String) {
                 let socket = get_socket(&packet[..]);
                 if !streams.contains_key(&socket) {
                     let new_stream = TcpStream::connect(&socket);
-                    if let Some(stream) = new_stream {
+                    if let Ok(stream) = new_stream {
                         println!("-----New socket used: {}", socket);
                         streams.insert(socket.clone(), stream);
                     } else {
@@ -166,7 +165,7 @@ fn get_socket(packet: &[u8]) -> String {
                 TransportHeader::Icmpv6(_) => {0}
             }
         } else {
-            "".to_string()
+            0
         };
         return format!("{}:{}", ip_addr, port);
     }
