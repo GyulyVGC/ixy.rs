@@ -144,6 +144,7 @@ fn receive(pci_addr: String) {
                 let mut stream = streams.get(&socket).unwrap();
                 let payload = PacketHeaders::from_ethernet_slice(&packet[..]).unwrap().payload;
                 stream.write(payload).unwrap();
+                stream.flush();
             }
         }
     }
