@@ -119,7 +119,6 @@ fn transmit(pci_addr: String) {
 fn receive(pci_addr: String) {
     let mut dev = ixy_init(&pci_addr, 1, 1, 0).unwrap();
 
-    let mut streams: HashMap<String, TcpStream> = HashMap::new();
     loop {
         // wait 1 second before receiving other packets, to not poll unnecessarily
         thread::sleep(Duration::from_secs(1));
@@ -129,22 +128,18 @@ fn receive(pci_addr: String) {
 
         if num_rx > 0 {
             for packet in buffer {
-                //let socket = get_socket(&packet[..]);
-                let socket = "192.168.1.251:999".to_string();
-                if !streams.contains_key(&socket) {
-                    println!("-----Trying connection to: {}", socket);
-                    let new_stream = TcpStream::connect(&socket);
-                    if let Ok(stream) = new_stream {
-                        println!("-----New socket used: {}", socket);
-                        streams.insert(socket.clone(), stream);
-                    } else {
-                        continue;
-                    }
+                let socket = get_socket(&packet[..]);
+                println!("-----Trying connection to: {}", socket);
+                let new_stream = TcpStream::connect(&socket);
+                if let Ok(mut stream) = new_stream {
+                    println!("-----Success! Sending data to {}", socket);
+                    let payload = PacketHeaders::from_ethernet_slice(&packet[..]).unwrap().payload;
+                    stream.write(payload).unwrap();
+                    stream.flush();
+                } else {
+                    println!("-----Failure! Skipping this socket...");
+                    continue;
                 }
-                let mut stream = streams.get(&socket).unwrap();
-                let payload = PacketHeaders::from_ethernet_slice(&packet[..]).unwrap().payload;
-                stream.write(payload).unwrap();
-                stream.flush();
             }
         }
     }
