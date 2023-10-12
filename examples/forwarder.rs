@@ -122,38 +122,51 @@ fn receive(pci_addr: String) {
 
     let mut streams: HashMap<String, TcpStream> = HashMap::new();
     loop {
+        // wait 1 second before receiving other packets, to not poll unnecessarily
+        thread::sleep(Duration::from_secs(1));
+
         let mut buffer: VecDeque<Packet> = VecDeque::with_capacity(BATCH_SIZE);
         let num_rx = dev.rx_batch(0, &mut buffer, BATCH_SIZE);
 
         if num_rx > 0 {
             for packet in buffer {
                 let socket = get_socket(&packet[..]);
-                println!("Socket used: {}", socket);
                 if !streams.contains_key(&socket) {
-                    streams.insert(socket.clone(), TcpStream::connect(&socket).unwrap());
+                    let new_stream = TcpStream::connect(&socket);
+                    if let Some(stream) = new_stream {
+                        println!("-----New socket used: {}", socket);
+                        streams.insert(socket.clone(), stream);
+                    } else {
+                        continue;
+                    }
                 }
                 let mut stream = streams.get(&socket).unwrap();
                 let payload = PacketHeaders::from_ethernet_slice(&packet[..]).unwrap().payload;
                 stream.write(payload).unwrap();
             }
         }
-
-        // wait 1 second before receiving other packets, to not poll unnecessarily
-        thread::sleep(Duration::from_secs(1));
     }
 }
 
 fn get_socket(packet: &[u8]) -> String {
     if let Ok(headers) = PacketHeaders::from_ethernet_slice(packet) {
-        let ip_addr = match headers.ip.unwrap() {
-            IpHeader::Version4(h, _) => {format_ipv4_address(h.destination)}
-            IpHeader::Version6(h, _) => {format_ipv6_address(h.destination)}
+        let ip_addr = if let Some(ip) = headers.ip {
+            match ip {
+                IpHeader::Version4(h, _) => format_ipv4_address(h.destination),
+                IpHeader::Version6(h, _) => format_ipv6_address(h.destination),
+            }
+        } else {
+            ""
         };
-        let port = match headers.transport.unwrap() {
-            TransportHeader::Udp(h) => {h.destination_port}
-            TransportHeader::Tcp(h) => {h.destination_port}
-            TransportHeader::Icmpv4(_) => {0}
-            TransportHeader::Icmpv6(_) => {0}
+        let port = if let Some(transport) = headers.transport {
+            match transport {
+                TransportHeader::Udp(h) => h.destination_port,
+                TransportHeader::Tcp(h) => h.destination_port,
+                TransportHeader::Icmpv4(_) => {0}
+                TransportHeader::Icmpv6(_) => {0}
+            }
+        } else {
+            ""
         };
         return format!("{}:{}", ip_addr, port);
     }
