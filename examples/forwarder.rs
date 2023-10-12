@@ -131,6 +131,7 @@ fn receive(pci_addr: String) {
             for packet in buffer {
                 let socket = get_socket(&packet[..]);
                 if !streams.contains_key(&socket) {
+                    println!("-----Trying connection to: {}", socket);
                     let new_stream = TcpStream::connect(&socket);
                     if let Ok(stream) = new_stream {
                         println!("-----New socket used: {}", socket);
