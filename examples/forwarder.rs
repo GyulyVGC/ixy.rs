@@ -77,7 +77,7 @@ fn transmit(pci_addr: String) {
         ((PACKET_SIZE - 20 - 14) >> 8) as u8,       // udp len excluding ip & ethernet, high byte
         ((PACKET_SIZE - 20 - 14) & 0xFF) as u8,     // udp len excluding ip & ethernet, low byte
         0x00, 0x00,                                 // udp checksum, optional
-        b'p', b'a', b'c',b'k', b'e', b't', b' '           // payload
+        b'p', b'a', b'c',b'k', b'e', b't', b' '     // payload
         // rest of the payload is zero-filled because mempools guarantee empty bufs
     ];
     pkt_data[6..12].clone_from_slice(&dev.get_mac_addr());
@@ -90,13 +90,14 @@ fn transmit(pci_addr: String) {
 
         alloc_pkt_batch(&pool, &mut buffer, NUM_PACKETS, PACKET_SIZE);
 
-        let mut id:u8 = 0;
+        let mut id: u16 = 0;
         for p in buffer.iter_mut() {
             for (i, data) in pkt_data.iter().enumerate() {
                 p[i] = *data;
             }
-            // add something different to each payload to distinguish this packet
-            p[49..] = **b"ciao";
+            // add something different to each payload to distinguish packets
+
+            p[49..51].clone_from_slice(&*id.to_be_bytes());
             id = id.wrapping_add(1);
             let checksum = calc_ipv4_checksum(&p[14..14 + 20]);
             // Calculated checksum is little-endian; checksum field is big-endian
