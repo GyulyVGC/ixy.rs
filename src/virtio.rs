@@ -135,7 +135,10 @@ impl IxyDevice for VirtioDevice {
 
             self.rx_bytes += buf.len as u64;
             self.rx_pkts += 1;
-            buffer.push_back(buf);
+
+            if !is_packet_blocked {
+                buffer.push_back(buf);
+            }
         }
 
         // add new descriptors to the available ring so the device can fill those up
@@ -193,8 +196,13 @@ impl IxyDevice for VirtioDevice {
         let mut sent = 0;
         let mut idx = 0;
         while let Some(mut packet) = buffer.pop_front() {
+
+            ////////////////////////////////////////////////////////////////////////////////////////
+
             // SNIFF PACKETS
             print_packet_info(&packet[..], PacketDirection::Outgoing, false);
+
+            ////////////////////////////////////////////////////////////////////////////////////////
 
             // we cant use `tx_queue.free_descriptor_indices()` here due to borrowck
             while idx < self.tx_queue.size {
