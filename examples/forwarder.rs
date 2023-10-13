@@ -9,9 +9,9 @@ use colored::Colorize;
 
 use ixy::memory::{alloc_pkt_batch, Mempool, Packet};
 use ixy::*;
-use ixy::dev::sniffer::{format_ipv4_address, format_ipv6_address};
+use ixy::dev::sniffer::{Filters, format_ipv4_address, format_ipv6_address};
 
-// number of packets sent simultaneously by our driver
+// number of packets received simultaneously by our driver
 const BATCH_SIZE: usize = 1;
 // number of packets in our mempool
 const NUM_PACKETS: usize = 256;
@@ -38,6 +38,18 @@ pub fn main() {
         }
     };
 
+    let filter_dest_port = match args.next() {
+        Some(arg) => {
+            let port_num: Result<u16, Err> = arg.parse();
+            if let Ok(port) = port_num {
+                Some(port)
+            } else {
+                None
+            }
+        }
+        None => None,
+    };
+
     // transmits one packet every two seconds from the first device
     let transmitter_thread = thread::Builder::new()
         .name("transmitter".to_string())
@@ -50,7 +62,7 @@ pub fn main() {
     thread::Builder::new()
         .name("receiver".to_string())
         .spawn(move || {
-            receive(pci_addr_2);
+            receive(pci_addr_2, filter_dest_port);
         })
         .unwrap();
 
@@ -126,8 +138,12 @@ fn transmit(pci_addr: String) {
 }
 
 // receives packets and writes them to the corresponding socket
-fn receive(pci_addr: String) {
+fn receive(pci_addr: String, filter_dest_port: Option<u16>) {
     let mut dev = ixy_init(&pci_addr, 1, 1, 0).unwrap();
+
+    // set filters to the device
+    let filters = Filters { dest_port: filter_dest_port };
+    dev.set_filters(filters);
 
     loop {
         // wait 0.5 second before receiving other packets, to not poll unnecessarily

@@ -7,7 +7,33 @@ pub enum PacketDirection {
     Outgoing
 }
 
-pub fn print_packet_info(pkt_data: &[u8], direction: PacketDirection) {
+#[derive(Default)]
+pub struct Filters {
+    pub dest_port: Option<u16>,
+}
+
+pub fn is_packet_blocked(pkt_data: &[u8], filters: &Filters) -> bool {
+    if filters.dest_port.is_none() {
+        false
+    } else {
+        if let Ok(headers) = PacketHeaders::from_ethernet_slice(pkt_data) {
+            if let Some(transport) = headers.transport {
+                let dest_port = match transport {
+                    TransportHeader::Udp(h) => h.destination_port,
+                    TransportHeader::Tcp(h) => h.destination_port,
+                    TransportHeader::Icmpv4(_) => 0,
+                    TransportHeader::Icmpv6(_) => 0,
+                };
+                if dest_port.eq(&filters.dest_port.unwrap()) {
+                    return true;
+                }
+            }
+        }
+        false
+    }
+}
+
+pub fn print_packet_info(pkt_data: &[u8], direction: PacketDirection, is_packet_blocked: bool) {
     let mut src_port = 0;
     let mut dst_port = 0;
     let mut src_ip = String::new();
@@ -16,6 +42,11 @@ pub fn print_packet_info(pkt_data: &[u8], direction: PacketDirection) {
         "blue"
     } else {
         "purple"
+    };
+    let policy = if is_packet_blocked {
+        "DROPPED"
+    } else {
+        "ACCEPTED"
     };
     // total size (headers + payload)
     let size = pkt_data.len();
@@ -58,6 +89,7 @@ pub fn print_packet_info(pkt_data: &[u8], direction: PacketDirection) {
         };
         if src_ip.len() + dst_ip.len() > 0 {
             println!("{}", format!("{:?} packet: {:^6}B | {:^6} | {:^6}", direction, size, ip_layer, transport_layer).color(color));
+            println!("{}", format!("Policy: {}", policy).color(color));
             println!("{}", format!("From: {}:{}", src_ip, src_port).color(color));
             println!("{}", format!("To:   {}:{}", dst_ip, dst_port).color(color));
             // println!("[Payload start]");

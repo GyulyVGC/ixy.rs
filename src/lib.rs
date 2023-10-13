@@ -32,6 +32,7 @@ use self::virtio::VirtioDevice;
 use std::collections::VecDeque;
 use std::error::Error;
 use std::os::unix::io::RawFd;
+use crate::dev::sniffer::Filters;
 
 /// Used for implementing an ixy device driver like ixgbe or virtio.
 pub trait IxyDevice {
@@ -137,6 +138,8 @@ pub trait IxyDevice {
             self.tx_batch(queue_id, buffer);
         }
     }
+
+    fn set_filters(&mut self, filters: Filters){}
 }
 
 /// Holds network card stats about sent and received packets.
@@ -289,5 +292,9 @@ impl IxyDevice for Box<dyn IxyDevice> {
 
     fn get_link_speed(&self) -> u16 {
         (**self).get_link_speed()
+    }
+
+    fn set_filters(&mut self, filters: Filters) {
+        (**self).set_filters(filters)
     }
 }

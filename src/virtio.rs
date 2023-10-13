@@ -9,12 +9,12 @@ use std::sync::atomic::{self, Ordering};
 use std::time::Duration;
 use std::{io, mem, slice, thread};
 
-use crate::memory;
+use crate::{Filters, memory};
 use crate::memory::{Dma, Packet, PACKET_HEADROOM};
 use crate::pci::{self, read_io16, read_io32, read_io8, write_io16, write_io32, write_io8};
 use crate::virtio_constants::*;
 use crate::{DeviceStats, IxyDevice, Mempool};
-use crate::dev::sniffer::{PacketDirection, print_packet_info};
+use crate::dev::sniffer::{is_packet_blocked, PacketDirection, print_packet_info};
 
 // we're currently only supporting legacy Virtio via PCI so this is fixed (4.1.5.1.3.1)
 const QUEUE_ALIGNMENT: usize = 4096;
@@ -51,6 +51,9 @@ pub struct VirtioDevice {
     tx_pkts: u64,
     rx_bytes: u64,
     tx_bytes: u64,
+
+    // filters
+    filters: Filters
 }
 
 impl IxyDevice for VirtioDevice {
@@ -120,8 +123,15 @@ impl IxyDevice for VirtioDevice {
             // adjust buffer length to actual packet size
             buf.len = used.len as usize - mem::size_of::<virtio_net_hdr>();
 
+            ////////////////////////////////////////////////////////////////////////////////////////
+
+            // MATCH AGAINST FILTERS
+            let is_packet_blocked = is_packet_blocked(&buf[..], &self.filters);
+
             // SNIFF PACKETS
-            print_packet_info(&buf[..], PacketDirection::Incoming);
+            print_packet_info(&buf[..], PacketDirection::Incoming, is_packet_blocked);
+
+            ////////////////////////////////////////////////////////////////////////////////////////
 
             self.rx_bytes += buf.len as u64;
             self.rx_pkts += 1;
@@ -184,7 +194,7 @@ impl IxyDevice for VirtioDevice {
         let mut idx = 0;
         while let Some(mut packet) = buffer.pop_front() {
             // SNIFF PACKETS
-            print_packet_info(&packet[..], PacketDirection::Outgoing);
+            print_packet_info(&packet[..], PacketDirection::Outgoing, false);
 
             // we cant use `tx_queue.free_descriptor_indices()` here due to borrowck
             while idx < self.tx_queue.size {
@@ -250,6 +260,10 @@ impl IxyDevice for VirtioDevice {
     fn get_link_speed(&self) -> u16 {
         // Virtio doesn't have a "link speed" per se so we just return something reasonable
         1000
+    }
+
+    fn set_filters(&mut self, filters: Filters) {
+        self.filters = filters;
     }
 }
 
@@ -338,6 +352,7 @@ impl VirtioDevice {
             tx_pkts: 0,
             rx_bytes: 0,
             tx_bytes: 0,
+            filters: Filters::default(),
         };
 
         // recheck status
