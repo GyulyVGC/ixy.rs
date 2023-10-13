@@ -40,7 +40,7 @@ pub fn main() {
 
     let filter_dest_port = match args.next() {
         Some(arg) => {
-            let port_num: Result<u16, Err> = arg.parse();
+            let port_num = arg.parse::<u16>();
             if let Ok(port) = port_num {
                 Some(port)
             } else {

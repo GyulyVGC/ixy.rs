@@ -139,7 +139,7 @@ pub trait IxyDevice {
         }
     }
 
-    fn set_filters(&mut self, filters: Filters){}
+    fn set_filters(&mut self, _filters: Filters){}
 }
 
 /// Holds network card stats about sent and received packets.
