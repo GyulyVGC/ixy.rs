@@ -12,7 +12,7 @@ use ixy::*;
 use ixy::dev::sniffer::{Filters, format_ipv4_address, format_ipv6_address};
 
 // number of packets received simultaneously by our driver
-const BATCH_SIZE: usize = 1;
+const BATCH_SIZE: usize = 32;
 // number of packets in our mempool
 const NUM_PACKETS: usize = 256;
 // size of our packets
@@ -147,7 +147,7 @@ fn receive(pci_addr: String, filter_dest_port: Option<u16>) {
 
     loop {
         // wait 0.5 second before receiving other packets, to not poll unnecessarily
-        thread::sleep(Duration::from_millis(500));
+        // thread::sleep(Duration::from_millis(500));
 
         let mut buffer: VecDeque<Packet> = VecDeque::with_capacity(BATCH_SIZE);
         let num_rx = dev.rx_batch(0, &mut buffer, BATCH_SIZE);
