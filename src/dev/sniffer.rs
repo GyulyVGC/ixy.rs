@@ -87,16 +87,18 @@ pub fn print_packet_info(pkt_data: &[u8], direction: PacketDirection, is_packet_
         } else {
             "////"
         };
-        println!("{}", format!("{:?} packet: {:^6}B | {:^6} | {:^6}", direction, size, ip_layer, transport_layer).color(color));
-        println!("{}", format!("Policy: {}", policy).color(color));
-        println!("{}", format!("From: {}:{}", src_ip, src_port).color(color));
-        println!("{}", format!("To:   {}:{}", dst_ip, dst_port).color(color));
-        // println!("[Payload start]");
-        println!("{}",format!("Payload: {}", String::from_utf8_lossy(headers.payload).into_owned()).color(color));
-        // println!("[Payload end]");
-        println!("{}","-".repeat(42));
+        if headers.transport.is_some() || headers.ip.is_some() {
+            println!("{}", format!("{:?} packet: {:^6}B | {:^6} | {:^6}", direction, size, ip_layer, transport_layer).color(color));
+            println!("{}", format!("Policy: {}", policy).color(color));
+            println!("{}", format!("From: {}:{}", src_ip, src_port).color(color));
+            println!("{}", format!("To:   {}:{}", dst_ip, dst_port).color(color));
+            // println!("[Payload start]");
+            println!("{}",format!("Payload: {}", String::from_utf8_lossy(headers.payload).into_owned()).color(color));
+            // println!("[Payload end]");
+            println!("{}","-".repeat(42));
+        }
     } else {
-        println!("Cannot parse packet's headers...");
+        println!("Cannot extract packet's headers...");
     }
 }
 
