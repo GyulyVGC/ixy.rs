@@ -45,11 +45,15 @@ pub fn main() -> Result<(), io::Error> {
     pcap.write_u32::<LE>(1)?; // network: Ethernet
 
     let mut dev = ixy_init(&pci_addr, 1, 1, 0).unwrap();
+
     let mac = dev.get_mac_addr();
     println!("MAC address: {:02X?}", mac);
+
     println!("Setting MAC address to BE:AE:F0:42:E7:B3");
     dev.set_mac_addr([0xbe, 0xae, 0xf0, 0x42, 0xe7, 0xb3]);
-    println!("Setting MAC address to BE:AE:F0:42:E7:B3");
+    println!("MAC address: {:02X?}", mac);
+
+    println!("Setting MAC address to BE:AE:F0:42:E7:B4");
     dev.set_mac_addr([0xbe, 0xae, 0xf0, 0x42, 0xe7, 0xb4]);
     println!("MAC address: {:02X?}", mac);
 
