@@ -1,5 +1,5 @@
 use colored::{Colorize};
-use etherparse::{Ethernet2Header, IpHeader, PacketHeaders, TransportHeader};
+use etherparse::{IpHeader, PacketHeaders, TransportHeader};
 
 #[derive(Debug, Eq, PartialEq)]
 pub enum PacketDirection {
@@ -54,13 +54,12 @@ pub fn print_packet_info(pkt_data: &[u8], direction: PacketDirection, is_packet_
     let size = pkt_data.len();
     if let Ok(headers) = PacketHeaders::from_ethernet_slice(pkt_data) {
         // link layer
-        let link_layer = if let Some(link) = headers.link {
+        let mut link_layer = "////";
+        if let Some(link) = headers.link {
             src_mac = format_mac_address(link.source);
             dst_mac = format_mac_address(link.destination);
-            &*format!("Ether type {}", link.ether_type)
-        } else {
-            "////"
-        };
+            link_layer = &*format!("Ether type {}", link.ether_type);
+        }
         // ip layer
         let ip_layer = if let Some(ip) = headers.ip {
             match ip {
@@ -97,7 +96,7 @@ pub fn print_packet_info(pkt_data: &[u8], direction: PacketDirection, is_packet_
         } else {
             "////"
         };
-        if transport_layer.ne("////") || ip_layer.ne("////") {
+        if transport_layer.ne("////") || ip_layer.ne("////") || link_layer.ne("////") {
             println!("{}", format!("{:?} packet: {:^6}B | {:^6} | {:^6}", direction, size, ip_layer, transport_layer).color(color));
             println!("{}", format!("Policy: {}", policy).color(color));
             println!("{}", format!("From: {}:{}", src_ip, src_port).color(color));
