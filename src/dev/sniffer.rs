@@ -54,11 +54,11 @@ pub fn print_packet_info(pkt_data: &[u8], direction: PacketDirection, is_packet_
     let size = pkt_data.len();
     if let Ok(headers) = PacketHeaders::from_ethernet_slice(pkt_data) {
         // link layer
-        let mut link_layer = "////";
+        let mut link_layer = "////".to_string();
         if let Some(link) = headers.link {
             src_mac = format_mac_address(link.source);
             dst_mac = format_mac_address(link.destination);
-            link_layer = &*format!("Ether type {}", link.ether_type);
+            link_layer = format!("Ether type {}", link.ether_type);
         }
         // ip layer
         let ip_layer = if let Some(ip) = headers.ip {
