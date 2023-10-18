@@ -1,5 +1,5 @@
 use colored::{Colorize};
-use etherparse::{IpHeader, PacketHeaders, TransportHeader};
+use etherparse::{Ethernet2Header, IpHeader, PacketHeaders, TransportHeader};
 
 #[derive(Debug, Eq, PartialEq)]
 pub enum PacketDirection {
@@ -36,6 +36,8 @@ pub fn is_packet_blocked(pkt_data: &[u8], filters: &Filters) -> bool {
 pub fn print_packet_info(pkt_data: &[u8], direction: PacketDirection, is_packet_blocked: bool) {
     let mut src_port = 0;
     let mut dst_port = 0;
+    let mut src_mac = String::new();
+    let mut dst_mac = String::new();
     let mut src_ip = String::new();
     let mut dst_ip = String::new();
     let color = if direction.eq(&PacketDirection::Outgoing) {
@@ -51,6 +53,14 @@ pub fn print_packet_info(pkt_data: &[u8], direction: PacketDirection, is_packet_
     // total size (headers + payload)
     let size = pkt_data.len();
     if let Ok(headers) = PacketHeaders::from_ethernet_slice(pkt_data) {
+        // link layer
+        let link_layer = if let Some(link) = headers.link {
+            src_mac = format_mac_address(link.source);
+            dst_mac = format_mac_address(link.destination);
+            &*format!("Ether type {}", link.ether_type)
+        } else {
+            "////"
+        };
         // ip layer
         let ip_layer = if let Some(ip) = headers.ip {
             match ip {
@@ -92,6 +102,8 @@ pub fn print_packet_info(pkt_data: &[u8], direction: PacketDirection, is_packet_
             println!("{}", format!("Policy: {}", policy).color(color));
             println!("{}", format!("From: {}:{}", src_ip, src_port).color(color));
             println!("{}", format!("To:   {}:{}", dst_ip, dst_port).color(color));
+            println!("{}", format!("Source MAC: {}", src_mac).color(color));
+            println!("{}", format!("Destination MAC: {}", dst_mac).color(color));
             // println!("[Payload start]");
             println!("{}",format!("Payload: {}", String::from_utf8_lossy(headers.payload).into_owned()).color(color));
             // println!("[Payload end]");
@@ -100,6 +112,15 @@ pub fn print_packet_info(pkt_data: &[u8], direction: PacketDirection, is_packet_
     } else {
         println!("Cannot extract packet's headers...");
     }
+}
+
+fn format_mac_address(mac_dec: [u8; 6]) -> String {
+    let mut mac_hex = String::new();
+    for n in &mac_dec {
+        mac_hex.push_str(&format!("{n:02x}:"));
+    }
+    mac_hex.pop();
+    mac_hex
 }
 
 pub fn format_ipv4_address(address: [u8; 4]) -> String {
