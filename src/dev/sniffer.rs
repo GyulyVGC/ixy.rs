@@ -96,7 +96,7 @@ pub fn print_packet_info(pkt_data: &[u8], direction: PacketDirection, is_packet_
         } else {
             "////"
         };
-        handle_arp_request(pkt_data);
+        handle_arp(pkt_data);
         println!("{}", format!("{:?} packet: {:^6}B | {:^6} | {:^6}", direction, size, ip_layer, transport_layer).color(color));
         println!("{}", format!("Policy: {}", policy).color(color));
         println!("{}", format!("From: {}:{}", src_ip, src_port).color(color));
@@ -221,12 +221,15 @@ pub fn format_ipv6_address(ipv6_long: [u8; 16]) -> String {
     ipv6_hex_compressed
 }
 
-pub fn handle_arp_request(pkt_data: &[u8]) {
+pub fn handle_arp(pkt_data: &[u8]) {
     if let Ok(headers) = PacketHeaders::from_ethernet_slice(pkt_data) {
         if let Some(link) = headers.link {
             if link.ether_type.eq(&etherparse::ether_type::ARP) { // check if ether type is 0x0806 (ARP)
+                let operation = if headers.payload[7] == 1 {"request"} else if headers.payload[7] == 2 {"response"} else { "" };
+                let target_ip = headers.payload[24..=27];
                 println!("{}", "Found an ARP packet!".color("green"));
-                println!("{}", format!("Operation: {}", headers.payload[7]).color("green"));
+                println!("{}", format!("Operation: {}", operation).color("green"));
+                println!("{}", format!("Target IP: {:?}", target_ip).color("green"));
             }
         }
     }
