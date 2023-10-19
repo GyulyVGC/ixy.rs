@@ -96,8 +96,8 @@ pub fn print_packet_info(pkt_data: &[u8], direction: PacketDirection, is_packet_
         } else {
             "////"
         };
+        handle_arp_request(pkt_data);
         if transport_layer.ne("////") || ip_layer.ne("////") {
-            handle_arp_request(pkt_data);
             println!("{}", format!("{:?} packet: {:^6}B | {:^6} | {:^6}", direction, size, ip_layer, transport_layer).color(color));
             println!("{}", format!("Policy: {}", policy).color(color));
             println!("{}", format!("From: {}:{}", src_ip, src_port).color(color));
