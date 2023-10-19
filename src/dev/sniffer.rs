@@ -224,8 +224,9 @@ pub fn format_ipv6_address(ipv6_long: [u8; 16]) -> String {
 pub fn handle_arp_request(pkt_data: &[u8]) {
     if let Ok(headers) = PacketHeaders::from_ethernet_slice(pkt_data) {
         if let Some(link) = headers.link {
-            if link.ether_type.eq(&2054) { // check if ether type is 0x0806 (ARP)
+            if link.ether_type.eq(&etherparse::ether_type::ARP) { // check if ether type is 0x0806 (ARP)
                 println!("{}", "Found an ARP packet!".color("green"));
+                println!("{}", format!("Operation: {}", headers.payload[7]).color("green"));
             }
         }
     }
