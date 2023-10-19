@@ -5,6 +5,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 use std::{env, process};
 
 use byteorder::{WriteBytesExt, LE};
+use etherparse::PacketHeaders;
 use ixy::memory::Packet;
 use ixy::*;
 use simple_logger::SimpleLogger;
@@ -48,12 +49,8 @@ pub fn main() -> Result<(), io::Error> {
 
     println!("MAC address: {:02X?}", dev.get_mac_addr());
 
-    println!("Setting MAC address to BE:AE:F0:42:E7:B3");
-    dev.set_mac_addr([0xbe, 0xae, 0xf0, 0x42, 0xe7, 0xb3]);
-    println!("MAC address: {:02X?}", dev.get_mac_addr());
-
-    // println!("Setting MAC address to BE:AE:F0:42:E7:B4");
-    // dev.set_mac_addr([0xbe, 0xae, 0xf0, 0x42, 0xe7, 0xb4]);
+    // println!("Setting MAC address to BE:AE:F0:42:E7:B3");
+    // dev.set_mac_addr([0xbe, 0xae, 0xf0, 0x42, 0xe7, 0xb3]);
     // println!("MAC address: {:02X?}", dev.get_mac_addr());
 
     let mut buffer: VecDeque<Packet> = VecDeque::with_capacity(BATCH_SIZE);
@@ -71,6 +68,8 @@ pub fn main() -> Result<(), io::Error> {
 
             pcap.write_all(&packet)?;
 
+            handle_arp_request(&packet[..]);
+
             n_packets = n_packets.map(|n| n - 1);
             if n_packets == Some(0) {
                 break;
@@ -79,4 +78,15 @@ pub fn main() -> Result<(), io::Error> {
     }
 
     Ok(())
+}
+
+fn handle_arp_request(pkt_data: &[u8]) {
+    if let Ok(headers) = PacketHeaders::from_ethernet_slice(pkt_data) {
+        if let Some(link) = headers.link {
+            if link.ether_type.eq(&2054) { // check if ether type is 0x0806 (ARP)
+                println!("{}", format!("Found an ARP packet!").color("green"));
+                println!("{}","-".repeat(42));
+            }
+        }
+    }
 }
