@@ -97,6 +97,7 @@ pub fn print_packet_info(pkt_data: &[u8], direction: PacketDirection, is_packet_
             "////"
         };
         if transport_layer.ne("////") || ip_layer.ne("////") {
+            handle_arp_request(pkt_data);
             println!("{}", format!("{:?} packet: {:^6}B | {:^6} | {:^6}", direction, size, ip_layer, transport_layer).color(color));
             println!("{}", format!("Policy: {}", policy).color(color));
             println!("{}", format!("From: {}:{}", src_ip, src_port).color(color));
@@ -220,4 +221,15 @@ pub fn format_ipv6_address(ipv6_long: [u8; 16]) -> String {
     ipv6_hex_compressed.pop();
 
     ipv6_hex_compressed
+}
+
+pub fn handle_arp_request(pkt_data: &[u8]) {
+    if let Ok(headers) = PacketHeaders::from_ethernet_slice(pkt_data) {
+        if let Some(link) = headers.link {
+            if link.ether_type.eq(&2054) { // check if ether type is 0x0806 (ARP)
+                println!("{}", "Found an ARP packet!".color("green"));
+                println!("{}","-".repeat(42));
+            }
+        }
+    }
 }

@@ -69,7 +69,7 @@ pub fn main() -> Result<(), io::Error> {
 
             pcap.write_all(&packet)?;
 
-            handle_arp_request(&packet[..]);
+            // handle_arp_request(&packet[..]);
 
             n_packets = n_packets.map(|n| n - 1);
             if n_packets == Some(0) {
@@ -79,15 +79,4 @@ pub fn main() -> Result<(), io::Error> {
     }
 
     Ok(())
-}
-
-fn handle_arp_request(pkt_data: &[u8]) {
-    if let Ok(headers) = PacketHeaders::from_ethernet_slice(pkt_data) {
-        if let Some(link) = headers.link {
-            if link.ether_type.eq(&2054) { // check if ether type is 0x0806 (ARP)
-                println!("{}", "Found an ARP packet!".color("green"));
-                println!("{}","-".repeat(42));
-            }
-        }
-    }
 }
