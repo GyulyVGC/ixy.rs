@@ -97,18 +97,16 @@ pub fn print_packet_info(pkt_data: &[u8], direction: PacketDirection, is_packet_
             "////"
         };
         handle_arp_request(pkt_data);
-        if transport_layer.ne("////") || ip_layer.ne("////") {
-            println!("{}", format!("{:?} packet: {:^6}B | {:^6} | {:^6}", direction, size, ip_layer, transport_layer).color(color));
-            println!("{}", format!("Policy: {}", policy).color(color));
-            println!("{}", format!("From: {}:{}", src_ip, src_port).color(color));
-            println!("{}", format!("To:   {}:{}", dst_ip, dst_port).color(color));
-            println!("{}", format!("Source MAC: {}", src_mac).color(color));
-            println!("{}", format!("Destination MAC: {}", dst_mac).color(color));
-            // println!("[Payload start]");
-            println!("{}",format!("Payload: {}", String::from_utf8_lossy(headers.payload).into_owned()).color(color));
-            // println!("[Payload end]");
-            println!("{}","-".repeat(42));
-        }
+        println!("{}", format!("{:?} packet: {:^6}B | {:^6} | {:^6}", direction, size, ip_layer, transport_layer).color(color));
+        println!("{}", format!("Policy: {}", policy).color(color));
+        println!("{}", format!("From: {}:{}", src_ip, src_port).color(color));
+        println!("{}", format!("To:   {}:{}", dst_ip, dst_port).color(color));
+        println!("{}", format!("Source MAC: {}", src_mac).color(color));
+        println!("{}", format!("Destination MAC: {}", dst_mac).color(color));
+        // println!("[Payload start]");
+        println!("{}",format!("Payload: {}", String::from_utf8_lossy(headers.payload).into_owned()).color(color));
+        // println!("[Payload end]");
+        println!("{}","-".repeat(42));
     } else {
         println!("Cannot extract packet's headers...");
     }
@@ -228,7 +226,6 @@ pub fn handle_arp_request(pkt_data: &[u8]) {
         if let Some(link) = headers.link {
             if link.ether_type.eq(&2054) { // check if ether type is 0x0806 (ARP)
                 println!("{}", "Found an ARP packet!".color("green"));
-                println!("{}","-".repeat(42));
             }
         }
     }
