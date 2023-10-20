@@ -97,10 +97,10 @@ pub fn print_packet_info(pkt_data: &[u8], direction: PacketDirection, is_packet_
             "////"
         };
 
-        if ip_layer.ne("////")
-            || transport_layer.ne("////")
-            || direction.eq(&PacketDirection::Outgoing)
-        {
+        // if ip_layer.ne("////")
+        //     || transport_layer.ne("////")
+        //     || direction.eq(&PacketDirection::Outgoing)
+        // {
             println!(
                 "{}",
                 format!(
@@ -125,7 +125,7 @@ pub fn print_packet_info(pkt_data: &[u8], direction: PacketDirection, is_packet_
             );
             // println!("[Payload end]");
             println!("{}", "-".repeat(42));
-        }
+        // }
     } else {
         println!("Cannot extract packet's headers...");
     }
