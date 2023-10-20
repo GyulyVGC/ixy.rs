@@ -282,7 +282,7 @@ impl VirtioDevice {
             warn!("not running as root, this will probably fail");
         }
 
-        pci::unbind_driver(pci_addr)?;
+        // pci::unbind_driver(pci_addr)?;
         pci::enable_dma(pci_addr)?;
 
         // 3.1: device initialization
