@@ -38,6 +38,7 @@ pub fn print_packet_info(pkt_data: &[u8], direction: PacketDirection, is_packet_
     let mut dst_port = 0;
     let mut src_mac = String::new();
     let mut dst_mac = String::new();
+    let mut ether_type = 0;
     let mut src_ip = String::new();
     let mut dst_ip = String::new();
     let color = if direction.eq(&PacketDirection::Outgoing) {
@@ -58,6 +59,7 @@ pub fn print_packet_info(pkt_data: &[u8], direction: PacketDirection, is_packet_
         if let Some(link) = headers.link {
             src_mac = format_mac_address(link.source);
             dst_mac = format_mac_address(link.destination);
+            ether_type = link.ether_type;
             // link_layer = format!("Ether type {}", link.ether_type);
         }
         // ip layer
@@ -114,7 +116,11 @@ pub fn print_packet_info(pkt_data: &[u8], direction: PacketDirection, is_packet_
             println!("{}", format!("To:   {}:{}", dst_ip, dst_port).color(color));
             println!("{}", format!("Source MAC: {}", src_mac).color(color));
             println!("{}", format!("Destination MAC: {}", dst_mac).color(color));
-            // println!("[Payload start]");
+            if ether_type.eq(&2054) { // ARP
+                println!("This is an ARP packet!".color(color));
+                println!("{}", format!("Sender IP: {:?}", &headers.payload[14..18]).color(color));
+                println!("{}", format!("Target IP: {:?}", &headers.payload[24..28]).color(color));
+            }
             println!(
                 "{}",
                 format!(
@@ -123,7 +129,6 @@ pub fn print_packet_info(pkt_data: &[u8], direction: PacketDirection, is_packet_
                 )
                 .color(color)
             );
-            // println!("[Payload end]");
             println!("{}", "-".repeat(42));
         // }
     } else {
