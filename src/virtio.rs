@@ -9,12 +9,12 @@ use std::sync::atomic::{self, Ordering};
 use std::time::Duration;
 use std::{io, mem, slice, thread};
 
-use crate::{Filters, memory};
+use crate::dev::sniffer::{is_packet_blocked, print_packet_info, PacketDirection};
 use crate::memory::{Dma, Packet, PACKET_HEADROOM};
 use crate::pci::{self, read_io16, read_io32, read_io8, write_io16, write_io32, write_io8};
 use crate::virtio_constants::*;
+use crate::{memory, Filters};
 use crate::{DeviceStats, IxyDevice, Mempool};
-use crate::dev::sniffer::{is_packet_blocked, PacketDirection, print_packet_info};
 
 // we're currently only supporting legacy Virtio via PCI so this is fixed (4.1.5.1.3.1)
 const QUEUE_ALIGNMENT: usize = 4096;
@@ -53,7 +53,7 @@ pub struct VirtioDevice {
     tx_bytes: u64,
 
     // filters
-    filters: Filters
+    filters: Filters,
 }
 
 impl IxyDevice for VirtioDevice {
@@ -196,7 +196,6 @@ impl IxyDevice for VirtioDevice {
         let mut sent = 0;
         let mut idx = 0;
         while let Some(mut packet) = buffer.pop_front() {
-
             ////////////////////////////////////////////////////////////////////////////////////////
 
             // SNIFF PACKETS

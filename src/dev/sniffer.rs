@@ -1,10 +1,10 @@
-use colored::{Colorize};
+use colored::Colorize;
 use etherparse::{IpHeader, PacketHeaders, TransportHeader};
 
 #[derive(Debug, Eq, PartialEq)]
 pub enum PacketDirection {
     Incoming,
-    Outgoing
+    Outgoing,
 }
 
 #[derive(Default)]
@@ -54,11 +54,11 @@ pub fn print_packet_info(pkt_data: &[u8], direction: PacketDirection, is_packet_
     let size = pkt_data.len();
     if let Ok(headers) = PacketHeaders::from_ethernet_slice(pkt_data) {
         // link layer
-        let mut link_layer = "////".to_string();
+        // let mut link_layer = "////".to_string();
         if let Some(link) = headers.link {
             src_mac = format_mac_address(link.source);
             dst_mac = format_mac_address(link.destination);
-            link_layer = format!("Ether type {}", link.ether_type);
+            // link_layer = format!("Ether type {}", link.ether_type);
         }
         // ip layer
         let ip_layer = if let Some(ip) = headers.ip {
@@ -90,24 +90,38 @@ pub fn print_packet_info(pkt_data: &[u8], direction: PacketDirection, is_packet_
                     dst_port = h.destination_port;
                     "TCP"
                 }
-                TransportHeader::Icmpv4(_) => {"ICMPv4"}
-                TransportHeader::Icmpv6(_) => {"ICMPv6"}
+                TransportHeader::Icmpv4(_) => "ICMPv4",
+                TransportHeader::Icmpv6(_) => "ICMPv6",
             }
         } else {
             "////"
         };
         // handle_arp(pkt_data);
         if ip_layer.ne("////") || transport_layer.ne("////") {
-            println!("{}", format!("{:?} packet: {:^6}B | {:^6} | {:^6}", direction, size, ip_layer, transport_layer).color(color));
+            println!(
+                "{}",
+                format!(
+                    "{:?} packet: {:^6}B | {:^6} | {:^6}",
+                    direction, size, ip_layer, transport_layer
+                )
+                .color(color)
+            );
             println!("{}", format!("Policy: {}", policy).color(color));
             println!("{}", format!("From: {}:{}", src_ip, src_port).color(color));
             println!("{}", format!("To:   {}:{}", dst_ip, dst_port).color(color));
             println!("{}", format!("Source MAC: {}", src_mac).color(color));
             println!("{}", format!("Destination MAC: {}", dst_mac).color(color));
             // println!("[Payload start]");
-            println!("{}",format!("Payload: {}", String::from_utf8_lossy(headers.payload).into_owned()).color(color));
+            println!(
+                "{}",
+                format!(
+                    "Payload: {}",
+                    String::from_utf8_lossy(headers.payload).into_owned()
+                )
+                .color(color)
+            );
             // println!("[Payload end]");
-            println!("{}","-".repeat(42));
+            println!("{}", "-".repeat(42));
         }
     } else {
         println!("Cannot extract packet's headers...");

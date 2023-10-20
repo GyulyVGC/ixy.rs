@@ -84,14 +84,24 @@ pub fn main() -> Result<(), io::Error> {
 pub fn handle_arp(pkt_data: &[u8], dev: &mut Box<dyn IxyDevice>) {
     if let Ok(headers) = PacketHeaders::from_ethernet_slice(pkt_data) {
         if let Some(link) = headers.link {
-            if link.ether_type.eq(&etherparse::ether_type::ARP) { // check if ether type is 0x0806 (ARP)
-                let operation = if headers.payload[7] == 1 {"request"} else if headers.payload[7] == 2 {"reply"} else { "" };
+            if link.ether_type.eq(&etherparse::ether_type::ARP) {
+                // check if ether type is 0x0806 (ARP)
+                let operation = if headers.payload[7] == 1 {
+                    "request"
+                } else if headers.payload[7] == 2 {
+                    "reply"
+                } else {
+                    ""
+                };
                 let target_ip = &headers.payload[24..28];
                 if headers.payload[7] == 1 && target_ip.eq(&[192, 168, 1, 251]) {
                     println!("{}", "Found an ARP packet with my IP!".color("green"));
                     println!("{}", format!("Operation: {}", operation).color("green"));
                     println!("{}", format!("Target IP: {:?}", target_ip).color("green"));
-                    println!("{}", "Producing the corresponding ARP reply...".color("green"));
+                    println!(
+                        "{}",
+                        "Producing the corresponding ARP reply...".color("green")
+                    );
                     send_arp_reply(pkt_data, dev);
                 }
             }
@@ -99,7 +109,7 @@ pub fn handle_arp(pkt_data: &[u8], dev: &mut Box<dyn IxyDevice>) {
     }
 }
 
-fn send_arp_reply(arp_request: &[u8], mut dev: &mut Box<dyn IxyDevice>) {
+fn send_arp_reply(arp_request: &[u8], dev: &mut Box<dyn IxyDevice>) {
     #[rustfmt::skip]
     let mut pkt_data = [
         0x00, 0x00, 0x00, 0x00, 0x00, 0x00,         // dst MAC (will be set later)

@@ -1,15 +1,15 @@
-use std::collections::{VecDeque};
-use std::{env, thread};
+use colored::Colorize;
+use etherparse::{IpHeader, PacketHeaders, TransportHeader};
+use std::collections::VecDeque;
 use std::io::Write;
 use std::net::TcpStream;
 use std::process;
-use std::time::{Duration};
-use etherparse::{IpHeader, PacketHeaders, TransportHeader};
-use colored::Colorize;
+use std::time::Duration;
+use std::{env, thread};
 
+use ixy::dev::sniffer::{format_ipv4_address, format_ipv6_address, Filters};
 use ixy::memory::{alloc_pkt_batch, Mempool, Packet};
 use ixy::*;
-use ixy::dev::sniffer::{Filters, format_ipv4_address, format_ipv6_address};
 
 // number of packets received simultaneously by our driver
 const BATCH_SIZE: usize = 32;
@@ -95,7 +95,7 @@ fn transmit(pci_addr: String) {
     ];
     pkt_data[6..12].clone_from_slice(&dev.get_mac_addr());
 
-    let pool = Mempool::allocate(NUM_PACKETS*2, 0).unwrap();
+    let pool = Mempool::allocate(NUM_PACKETS * 2, 0).unwrap();
 
     // pre-fill all packet buffer in the pool with data and return them to the packet pool
     {
@@ -142,7 +142,9 @@ fn receive(pci_addr: String, filter_dest_port: Option<u16>) {
     let mut dev = ixy_init(&pci_addr, 1, 1, 0).unwrap();
 
     // set filters to the device
-    let filters = Filters { dest_port: filter_dest_port };
+    let filters = Filters {
+        dest_port: filter_dest_port,
+    };
     dev.set_filters(filters);
 
     loop {
@@ -157,13 +159,30 @@ fn receive(pci_addr: String, filter_dest_port: Option<u16>) {
                 let socket = get_socket(&packet[..]);
                 let new_stream = TcpStream::connect(&socket);
                 if let Ok(mut stream) = new_stream {
-                    println!("{}", format!("Attempt to connect to {}\nSuccess! Sending data to {}", socket, socket).green());
-                    println!("{}","-".repeat(42));
-                    let payload = PacketHeaders::from_ethernet_slice(&packet[..]).unwrap().payload;
-                    stream.write(payload).unwrap();
+                    println!(
+                        "{}",
+                        format!(
+                            "Attempt to connect to {}\nSuccess! Sending data to {}",
+                            socket, socket
+                        )
+                        .green()
+                    );
+                    println!("{}", "-".repeat(42));
+                    let payload = PacketHeaders::from_ethernet_slice(&packet[..])
+                        .unwrap()
+                        .payload;
+                    stream.write_all(payload).unwrap();
                 } else {
-                    println!("{}", format!("Attempt to connect to {}\nFailure! {}", socket, new_stream.err().unwrap()).red());
-                    println!("{}","-".repeat(42));
+                    println!(
+                        "{}",
+                        format!(
+                            "Attempt to connect to {}\nFailure! {}",
+                            socket,
+                            new_stream.err().unwrap()
+                        )
+                        .red()
+                    );
+                    println!("{}", "-".repeat(42));
                     continue;
                 }
             }
@@ -185,8 +204,8 @@ fn get_socket(packet: &[u8]) -> String {
             match transport {
                 TransportHeader::Udp(h) => h.destination_port,
                 TransportHeader::Tcp(h) => h.destination_port,
-                TransportHeader::Icmpv4(_) => {0}
-                TransportHeader::Icmpv6(_) => {0}
+                TransportHeader::Icmpv4(_) => 0,
+                TransportHeader::Icmpv6(_) => 0,
             }
         } else {
             0
