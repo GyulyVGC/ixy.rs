@@ -103,41 +103,48 @@ pub fn print_packet_info(pkt_data: &[u8], direction: PacketDirection, is_packet_
         //     || transport_layer.ne("////")
         //     || direction.eq(&PacketDirection::Outgoing)
         // {
+        println!(
+            "{}",
+            format!(
+                "{:?} packet: {:^6}B | {:^6} | {:^6}",
+                direction, size, ip_layer, transport_layer
+            )
+            .color(color)
+        );
+        println!("{}", format!("Policy: {}", policy).color(color));
+        println!("{}", format!("From: {}:{}", src_ip, src_port).color(color));
+        println!("{}", format!("To:   {}:{}", dst_ip, dst_port).color(color));
+        println!("{}", format!("Source MAC: {}", src_mac).color(color));
+        println!("{}", format!("Destination MAC: {}", dst_mac).color(color));
+        println!(
+            "{}",
+            format!(
+                "Payload: {}",
+                String::from_utf8_lossy(headers.payload).into_owned()
+            )
+            .color(color)
+        );
+        if ether_type.eq(&2054) {
+            // ARP
+            let operation = if headers.payload[7] == 1 {
+                "request"
+            } else if headers.payload[7] == 2 {
+                "reply"
+            } else {
+                ""
+            };
+            println!("{}", "This is an ARP packet!".color("green"));
+            println!("{}", format!("Operation: {}", operation).color("green"));
             println!(
                 "{}",
-                format!(
-                    "{:?} packet: {:^6}B | {:^6} | {:^6}",
-                    direction, size, ip_layer, transport_layer
-                )
-                .color(color)
+                format!("Sender IP: {:?}", &headers.payload[14..18]).color("green")
             );
-            println!("{}", format!("Policy: {}", policy).color(color));
-            println!("{}", format!("From: {}:{}", src_ip, src_port).color(color));
-            println!("{}", format!("To:   {}:{}", dst_ip, dst_port).color(color));
-            println!("{}", format!("Source MAC: {}", src_mac).color(color));
-            println!("{}", format!("Destination MAC: {}", dst_mac).color(color));
-            if ether_type.eq(&2054) { // ARP
-                let operation = if headers.payload[7] == 1 {
-                    "request"
-                } else if headers.payload[7] == 2 {
-                    "reply"
-                } else {
-                    ""
-                };
-                println!("{}", "This is an ARP packet!".color(color));
-                println!("{}", format!("Operation: {}", operation).color("green"));
-                println!("{}", format!("Sender IP: {:?}", &headers.payload[14..18]).color(color));
-                println!("{}", format!("Target IP: {:?}", &headers.payload[24..28]).color(color));
-            }
             println!(
                 "{}",
-                format!(
-                    "Payload: {}",
-                    String::from_utf8_lossy(headers.payload).into_owned()
-                )
-                .color(color)
+                format!("Target IP: {:?}", &headers.payload[24..28]).color("green")
             );
-            println!("{}", "-".repeat(42));
+        }
+        println!("{}", "-".repeat(42));
         // }
     } else {
         println!("Cannot extract packet's headers...");
