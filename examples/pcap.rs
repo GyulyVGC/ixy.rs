@@ -86,17 +86,9 @@ pub fn handle_arp(pkt_data: &[u8], dev: &mut Box<dyn IxyDevice>) {
         if let Some(link) = headers.link {
             if link.ether_type.eq(&etherparse::ether_type::ARP) {
                 // check if ether type is 0x0806 (ARP)
-                let operation = if headers.payload[7] == 1 {
-                    "request"
-                } else if headers.payload[7] == 2 {
-                    "reply"
-                } else {
-                    ""
-                };
                 let target_ip = &headers.payload[24..28];
                 if headers.payload[7] == 1 && target_ip.eq(&[192, 168, 1, 251]) {
                     println!("{}", "Found an ARP packet with my IP!".color("green"));
-                    println!("{}", format!("Operation: {}", operation).color("green"));
                     println!("{}", format!("Target IP: {:?}", target_ip).color("green"));
                     println!(
                         "{}",

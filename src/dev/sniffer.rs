@@ -117,7 +117,15 @@ pub fn print_packet_info(pkt_data: &[u8], direction: PacketDirection, is_packet_
             println!("{}", format!("Source MAC: {}", src_mac).color(color));
             println!("{}", format!("Destination MAC: {}", dst_mac).color(color));
             if ether_type.eq(&2054) { // ARP
-                println!("This is an ARP packet!".color(color));
+                let operation = if headers.payload[7] == 1 {
+                    "request"
+                } else if headers.payload[7] == 2 {
+                    "reply"
+                } else {
+                    ""
+                };
+                println!("{}", "This is an ARP packet!".color(color));
+                println!("{}", format!("Operation: {}", operation).color("green"));
                 println!("{}", format!("Sender IP: {:?}", &headers.payload[14..18]).color(color));
                 println!("{}", format!("Target IP: {:?}", &headers.payload[24..28]).color(color));
             }
