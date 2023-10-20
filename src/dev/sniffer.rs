@@ -96,8 +96,11 @@ pub fn print_packet_info(pkt_data: &[u8], direction: PacketDirection, is_packet_
         } else {
             "////"
         };
-        // handle_arp(pkt_data);
-        if ip_layer.ne("////") || transport_layer.ne("////") {
+
+        if ip_layer.ne("////")
+            || transport_layer.ne("////")
+            || direction.eq(&PacketDirection::Outgoing)
+        {
             println!(
                 "{}",
                 format!(
