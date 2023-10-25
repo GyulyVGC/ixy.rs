@@ -1,34 +1,20 @@
+use crate::dev::firewall::{FwAction, FwRule, PacketDirection};
 use colored::Colorize;
 use etherparse::{IpHeader, PacketHeaders, TransportHeader};
 
-#[derive(Debug, Eq, PartialEq)]
-pub enum PacketDirection {
-    Incoming,
-    Outgoing,
-}
-
-#[derive(Default)]
-pub struct Filters {
-    pub dest_port: Option<u16>,
-}
-
-pub fn is_packet_blocked(pkt_data: &[u8], filters: &Filters) -> bool {
-    if filters.dest_port.is_none() {
-        false
-    } else {
-        if let Ok(headers) = PacketHeaders::from_ethernet_slice(pkt_data) {
-            if let Some(transport) = headers.transport {
-                let dest_port = match transport {
-                    TransportHeader::Udp(h) => h.destination_port,
-                    TransportHeader::Tcp(h) => h.destination_port,
-                    TransportHeader::Icmpv4(_) => 0,
-                    TransportHeader::Icmpv6(_) => 0,
-                };
-                if dest_port.eq(&filters.dest_port.unwrap()) {
-                    return true;
-                }
-            }
+pub fn is_packet_blocked(pkt_data: &[u8], direction: PacketDirection, firewall_rules: &Vec<FwRule>) -> bool {
+    let mut action = FwAction::default();
+    let mut current_specificity = 0;
+    for rule in firewall_rules {
+        if rule.matches_packet(pkt_data, &direction) && rule.specificity() > current_specificity {
+            current_specificity = rule.specificity();
+            action = rule.action;
         }
+    }
+
+    if action.eq(&FwAction::Accept) {
+        true
+    } else {
         false
     }
 }
@@ -41,7 +27,7 @@ pub fn print_packet_info(pkt_data: &[u8], direction: PacketDirection, is_packet_
     let mut ether_type = 0;
     let mut src_ip = String::new();
     let mut dst_ip = String::new();
-    let color = if direction.eq(&PacketDirection::Outgoing) {
+    let color = if direction.eq(&PacketDirection::Out) {
         "blue"
     } else {
         "purple"
@@ -259,48 +245,3 @@ pub fn format_ipv6_address(ipv6_long: [u8; 16]) -> String {
 
     ipv6_hex_compressed
 }
-
-// pub fn handle_arp(pkt_data: &[u8]) {
-//     if let Ok(headers) = PacketHeaders::from_ethernet_slice(pkt_data) {
-//         if let Some(link) = headers.link {
-//             if link.ether_type.eq(&etherparse::ether_type::ARP) { // check if ether type is 0x0806 (ARP)
-//                 let operation = if headers.payload[7] == 1 {"request"} else if headers.payload[7] == 2 {"reply"} else { "" };
-//                 let target_ip = &headers.payload[24..=27];
-//                 println!("{}", "Found an ARP packet!".color("green"));
-//                 println!("{}", format!("Operation: {}", operation).color("green"));
-//                 println!("{}", format!("Target IP: {:?}", target_ip).color("green"));
-//                 if target_ip.eq(&[192, 168, 1, 251]) {
-//                     println!("{}", "This is my address! An ARP reply has to be produced!".color("green"));
-//
-//                 }
-//             }
-//         }
-//     }
-// }
-//
-// fn send_arp_reply(arp_request: &[u8]) {
-//     #[rustfmt::skip]
-//         let mut pkt_data = [
-//         0x00, 0x00, 0x00, 0x00, 0x00, 0x00,         // dst MAC (will be set later)
-//         0x00, 0x00, 0x00, 0x00, 0x00, 0x00,         // src MAC (will be set later)
-//         0x08, 0x06,                                 // ether type: ARP
-//         0x00, 0x01,                                 // HTYPE: ethernet
-//         0x08, 0x00,                                 // PTYPE: IPv4
-//         6,                                          // HLEN: 6 bytes for ethernet
-//         4,                                          // PLEN: 4 bytes for IPv4
-//         0x00, 0x02,                                 // operation: 2 is ARP reply
-//         0x00, 0x00, 0x00, 0x00, 0x00, 0x00,         // sender MAC (will be set later)
-//         192, 168, 1, 251,                           // sender IP (for the moment it's static)
-//         0x00, 0x00, 0x00, 0x00, 0x00, 0x00,         // target MAC (will be set later)
-//         0, 0, 0, 0,                                 // target IP (will be set later)
-//     ];
-//
-//     // set destination MAC to source MAC address of the ARP request
-//     pkt_data[0..6].clone_from_slice(&arp_request[6..12]);
-//     // set source MAC to MAC address of this device
-//     pkt_data[6..12].clone_from_slice(&dev.get_mac_addr());
-//     // set sender MAC to MAC address of this device
-//     pkt_data[22..28].clone_from_slice(&dev.get_mac_addr());
-//     // set target MAC to source MAC address of the ARP request
-//     pkt_data[32..38].clone_from_slice(&dev.get_mac_addr());
-// }

@@ -29,10 +29,10 @@ use self::memory::*;
 use self::pci::*;
 use self::virtio::VirtioDevice;
 
-use crate::dev::sniffer::Filters;
 use std::collections::VecDeque;
 use std::error::Error;
 use std::os::unix::io::RawFd;
+use crate::dev::firewall::FwRule;
 
 /// Used for implementing an ixy device driver like ixgbe or virtio.
 pub trait IxyDevice {
@@ -139,7 +139,7 @@ pub trait IxyDevice {
         }
     }
 
-    fn set_filters(&mut self, _filters: Filters) {}
+    fn set_firewall_rules(&mut self, _firewall_rules: Vec<FwRule>) {}
 }
 
 /// Holds network card stats about sent and received packets.
@@ -294,7 +294,7 @@ impl IxyDevice for Box<dyn IxyDevice> {
         (**self).get_link_speed()
     }
 
-    fn set_filters(&mut self, filters: Filters) {
-        (**self).set_filters(filters)
+    fn set_firewall_rules(&mut self, firewall_rules: Vec<FwRule>) {
+        (**self).set_firewall_rules(firewall_rules)
     }
 }

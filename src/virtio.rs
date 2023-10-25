@@ -13,8 +13,9 @@ use crate::dev::sniffer::{is_packet_blocked, print_packet_info, PacketDirection}
 use crate::memory::{Dma, Packet, PACKET_HEADROOM};
 use crate::pci::{self, read_io16, read_io32, read_io8, write_io16, write_io32, write_io8};
 use crate::virtio_constants::*;
-use crate::{memory, Filters};
+use crate::{memory};
 use crate::{DeviceStats, IxyDevice, Mempool};
+use crate::dev::firewall::FwRule;
 
 // we're currently only supporting legacy Virtio via PCI so this is fixed (4.1.5.1.3.1)
 const QUEUE_ALIGNMENT: usize = 4096;
@@ -52,8 +53,8 @@ pub struct VirtioDevice {
     rx_bytes: u64,
     tx_bytes: u64,
 
-    // filters
-    filters: Filters,
+    // firewall rules
+    firewall_rules: Vec<FwRule>,
 }
 
 impl IxyDevice for VirtioDevice {
@@ -125,18 +126,17 @@ impl IxyDevice for VirtioDevice {
 
             ////////////////////////////////////////////////////////////////////////////////////////
 
-            // MATCH AGAINST FILTERS
-            let is_packet_blocked = is_packet_blocked(&buf[..], &self.filters);
+            // MATCH AGAINST FIREWALL RULES
+            let is_packet_blocked = is_packet_blocked(&buf[..], PacketDirection::In, &self.firewall_rules);
 
             // SNIFF PACKETS
-            print_packet_info(&buf[..], PacketDirection::Incoming, is_packet_blocked);
+            print_packet_info(&buf[..], PacketDirection::In, is_packet_blocked);
 
             ////////////////////////////////////////////////////////////////////////////////////////
 
-            self.rx_bytes += buf.len as u64;
-            self.rx_pkts += 1;
-
             if !is_packet_blocked {
+                self.rx_bytes += buf.len as u64;
+                self.rx_pkts += 1;
                 buffer.push_back(buf);
             }
         }
@@ -196,10 +196,18 @@ impl IxyDevice for VirtioDevice {
         let mut sent = 0;
         let mut idx = 0;
         while let Some(mut packet) = buffer.pop_front() {
+
             ////////////////////////////////////////////////////////////////////////////////////////
 
+            // MATCH AGAINST FIREWALL RULES
+            let is_packet_blocked = is_packet_blocked(&buf[..], PacketDirection::Out, &self.firewall_rules);
+
             // SNIFF PACKETS
-            print_packet_info(&packet[..], PacketDirection::Outgoing, false);
+            print_packet_info(&packet[..], PacketDirection::Out, is_packet_blocked);
+
+            if is_packet_blocked {
+                continue;
+            }
 
             ////////////////////////////////////////////////////////////////////////////////////////
 
@@ -269,8 +277,8 @@ impl IxyDevice for VirtioDevice {
         1000
     }
 
-    fn set_filters(&mut self, filters: Filters) {
-        self.filters = filters;
+    fn set_firewall_rules(&mut self, firewall_rules: Vec<FwRule>) {
+        self.firewall_rules = firewall_rules;
     }
 }
 
@@ -359,7 +367,7 @@ impl VirtioDevice {
             tx_pkts: 0,
             rx_bytes: 0,
             tx_bytes: 0,
-            filters: Filters::default(),
+            firewall_rules: Vec::new(),
         };
 
         // recheck status

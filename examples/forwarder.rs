@@ -7,7 +7,7 @@ use std::process;
 use std::time::Duration;
 use std::{env, thread};
 
-use ixy::dev::sniffer::{format_ipv4_address, format_ipv6_address, Filters};
+use ixy::dev::sniffer::{format_ipv4_address, format_ipv6_address};
 use ixy::memory::{alloc_pkt_batch, Mempool, Packet};
 use ixy::*;
 
@@ -38,18 +38,6 @@ pub fn main() {
         }
     };
 
-    let filter_dest_port = match args.next() {
-        Some(arg) => {
-            let port_num = arg.parse::<u16>();
-            if let Ok(port) = port_num {
-                Some(port)
-            } else {
-                None
-            }
-        }
-        None => None,
-    };
-
     // transmits one packet every two seconds from the first device
     let transmitter_thread = thread::Builder::new()
         .name("transmitter".to_string())
@@ -62,7 +50,7 @@ pub fn main() {
     thread::Builder::new()
         .name("receiver".to_string())
         .spawn(move || {
-            receive(pci_addr_2, filter_dest_port);
+            receive(pci_addr_2);
         })
         .unwrap();
 
@@ -138,14 +126,12 @@ fn transmit(pci_addr: String) {
 }
 
 // receives packets and writes them to the corresponding socket
-fn receive(pci_addr: String, filter_dest_port: Option<u16>) {
+fn receive(pci_addr: String) {
     let mut dev = ixy_init(&pci_addr, 1, 1, 0).unwrap();
 
-    // set filters to the device
-    let filters = Filters {
-        dest_port: filter_dest_port,
-    };
-    dev.set_filters(filters);
+    // set custom firewall rules for the device
+    let mut firewall_rules = Vec::new();
+    dev.set_firewall_rules(firewall_rules);
 
     loop {
         // wait 0.5 second before receiving other packets, to not poll unnecessarily
