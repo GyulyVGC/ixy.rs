@@ -2,7 +2,11 @@ use crate::dev::firewall::{FwAction, FwRule, PacketDirection};
 use colored::Colorize;
 use etherparse::{IpHeader, PacketHeaders, TransportHeader};
 
-pub fn is_packet_blocked(pkt_data: &[u8], direction: PacketDirection, firewall_rules: &Vec<FwRule>) -> bool {
+pub fn is_packet_blocked(
+    pkt_data: &[u8],
+    direction: PacketDirection,
+    firewall_rules: &Vec<FwRule>,
+) -> bool {
     let mut action = FwAction::default();
     let mut current_specificity = 0;
     for rule in firewall_rules {

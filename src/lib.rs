@@ -29,10 +29,10 @@ use self::memory::*;
 use self::pci::*;
 use self::virtio::VirtioDevice;
 
+use crate::dev::firewall::FwRule;
 use std::collections::VecDeque;
 use std::error::Error;
 use std::os::unix::io::RawFd;
-use crate::dev::firewall::FwRule;
 
 /// Used for implementing an ixy device driver like ixgbe or virtio.
 pub trait IxyDevice {

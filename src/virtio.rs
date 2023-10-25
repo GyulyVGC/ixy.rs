@@ -9,13 +9,13 @@ use std::sync::atomic::{self, Ordering};
 use std::time::Duration;
 use std::{io, mem, slice, thread};
 
+use crate::dev::firewall::FwRule;
 use crate::dev::sniffer::{is_packet_blocked, print_packet_info, PacketDirection};
+use crate::memory;
 use crate::memory::{Dma, Packet, PACKET_HEADROOM};
 use crate::pci::{self, read_io16, read_io32, read_io8, write_io16, write_io32, write_io8};
 use crate::virtio_constants::*;
-use crate::{memory};
 use crate::{DeviceStats, IxyDevice, Mempool};
-use crate::dev::firewall::FwRule;
 
 // we're currently only supporting legacy Virtio via PCI so this is fixed (4.1.5.1.3.1)
 const QUEUE_ALIGNMENT: usize = 4096;
@@ -127,7 +127,8 @@ impl IxyDevice for VirtioDevice {
             ////////////////////////////////////////////////////////////////////////////////////////
 
             // MATCH AGAINST FIREWALL RULES
-            let is_packet_blocked = is_packet_blocked(&buf[..], PacketDirection::In, &self.firewall_rules);
+            let is_packet_blocked =
+                is_packet_blocked(&buf[..], PacketDirection::In, &self.firewall_rules);
 
             // SNIFF PACKETS
             print_packet_info(&buf[..], PacketDirection::In, is_packet_blocked);
@@ -196,11 +197,11 @@ impl IxyDevice for VirtioDevice {
         let mut sent = 0;
         let mut idx = 0;
         while let Some(mut packet) = buffer.pop_front() {
-
             ////////////////////////////////////////////////////////////////////////////////////////
 
             // MATCH AGAINST FIREWALL RULES
-            let is_packet_blocked = is_packet_blocked(&buf[..], PacketDirection::Out, &self.firewall_rules);
+            let is_packet_blocked =
+                is_packet_blocked(&buf[..], PacketDirection::Out, &self.firewall_rules);
 
             // SNIFF PACKETS
             print_packet_info(&packet[..], PacketDirection::Out, is_packet_blocked);

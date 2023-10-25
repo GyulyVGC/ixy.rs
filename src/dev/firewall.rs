@@ -32,9 +32,9 @@ impl PortCollection {
 
         let parts: Vec<&str> = str.split(",").collect();
         for part in parts {
-            if part.contains("-") {
+            if part.contains(":") {
                 // port range
-                let mut subparts = part.split("-");
+                let mut subparts = part.split(":");
                 let range = RangeInclusive::new(
                     u16::from_str(subparts.next().expect("Invalid format for firewall rule"))
                         .expect("Invalid format for firewall rule"),
