@@ -19,6 +19,7 @@ pub enum FwAction {
     Reject,
 }
 
+#[derive(Debug)]
 pub struct PortCollection {
     pub ports: Vec<u16>,
     pub ranges: Vec<RangeInclusive<u16>>,
@@ -65,6 +66,7 @@ impl PortCollection {
     }
 }
 
+#[derive(Debug)]
 pub struct IpCollection {
     pub ips: Vec<IpAddr>,
     pub ranges: Vec<RangeInclusive<IpAddr>>,
