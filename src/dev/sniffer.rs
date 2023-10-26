@@ -10,7 +10,7 @@ pub fn is_packet_blocked(
     let mut action = FwAction::default();
     let mut current_specificity = 0;
     for rule in firewall_rules {
-        if rule.matches_packet(pkt_data, &direction) && rule.specificity() > current_specificity {
+        if rule.matches_packet(pkt_data, &direction) && rule.specificity() >= current_specificity {
             current_specificity = rule.specificity();
             action = rule.action;
         }

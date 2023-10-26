@@ -26,7 +26,7 @@ pub struct PortCollection {
 }
 
 impl PortCollection {
-    pub fn from_str(str: &str) -> Self {
+    pub fn new(str: &str) -> Self {
         let mut ports = Vec::new();
         let mut ranges = Vec::new();
 
@@ -73,7 +73,7 @@ pub struct IpCollection {
 }
 
 impl IpCollection {
-    pub fn from_str(str: &str) -> Self {
+    pub fn new(str: &str) -> Self {
         let mut ips = Vec::new();
         let mut ranges = Vec::new();
 
@@ -142,14 +142,14 @@ pub enum FwOption {
 impl FwOption {
     pub fn new(option: &str, value: &str) -> Self {
         match option {
-            "--dest" => Self::Dest(IpCollection::from_str(value)),
-            "--dport" => Self::Dport(PortCollection::from_str(value)),
+            "--dest" => Self::Dest(IpCollection::new(value)),
+            "--dport" => Self::Dport(PortCollection::new(value)),
             // "--icmp-type" => ,
             "--proto" => {
                 Self::Proto(u8::from_str(value).expect("Invalid format for firewall rule"))
             }
-            "--source" => Self::Source(IpCollection::from_str(value)),
-            "--sport" => Self::Sport(PortCollection::from_str(value)),
+            "--source" => Self::Source(IpCollection::new(value)),
+            "--sport" => Self::Sport(PortCollection::new(value)),
             _ => panic!("Invalid format for firewall rule"),
         }
     }
