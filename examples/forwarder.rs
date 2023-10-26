@@ -139,7 +139,7 @@ fn receive(pci_addr: String) {
             firewall_rules.push(FwRule::new(&firewall_rule));
         }
     }
-    println!("FIREWALL RULES SET:\n{:?}", firewall_rules);
+    println!("FIREWALL RULES SET:\n{:#?}", firewall_rules);
     dev.set_firewall_rules(firewall_rules);
 
     loop {
