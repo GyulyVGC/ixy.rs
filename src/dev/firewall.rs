@@ -29,11 +29,11 @@ impl PortCollection {
         let mut ports = Vec::new();
         let mut ranges = Vec::new();
 
-        let parts: Vec<&str> = str.split(",").collect();
+        let parts: Vec<&str> = str.split(',').collect();
         for part in parts {
-            if part.contains(":") {
+            if part.contains(':') {
                 // port range
-                let mut subparts = part.split(":");
+                let mut subparts = part.split(':');
                 let range = RangeInclusive::new(
                     u16::from_str(subparts.next().expect("Invalid format for firewall rule"))
                         .expect("Invalid format for firewall rule"),
@@ -75,11 +75,11 @@ impl IpCollection {
         let mut ips = Vec::new();
         let mut ranges = Vec::new();
 
-        let parts: Vec<&str> = str.split(",").collect();
+        let parts: Vec<&str> = str.split(',').collect();
         for part in parts {
-            if part.contains("-") {
+            if part.contains('-') {
                 // IP range
-                let mut subparts = part.split("-");
+                let mut subparts = part.split('-');
                 let range = RangeInclusive::new(
                     IpAddr::from_str(subparts.next().expect("Invalid format for firewall rule"))
                         .expect("Invalid format for firewall rule"),
@@ -110,6 +110,15 @@ impl IpCollection {
         }
     }
 }
+
+// in the future I may implement this trait to achieve more robustness
+// impl std::str::FromStr for IpCollection {
+//     type Err = ();
+//
+//     fn from_str(s: &str) -> Result<Self, Self::Err> {
+//         todo!()
+//     }
+// }
 
 /// Options associated to a specific firewall rule
 pub enum FwOption {
@@ -146,7 +155,7 @@ impl FwOption {
         if let Ok(headers) = PacketHeaders::from_ethernet_slice(packet) {
             let ip_header = headers.ip;
             let transport_header = headers.transport;
-            return match self {
+            match self {
                 FwOption::Dest(ip_collection) => ip_collection.contains(get_dest(ip_header)),
                 FwOption::Dport(port_collection) => {
                     port_collection.contains(get_dport(transport_header))
@@ -171,7 +180,7 @@ impl FwOption {
                 FwOption::Sport(port_collection) => {
                     port_collection.contains(get_sport(transport_header))
                 }
-            };
+            }
         } else {
             false
         }
@@ -187,7 +196,7 @@ pub struct FwRule {
 
 impl FwRule {
     pub fn new(rule_str: &str) -> Self {
-        let mut parts = rule_str.split(" ");
+        let mut parts = rule_str.split(' ');
 
         // rule direction
         let direction_str = parts.next().expect("Invalid format for firewall rule");
