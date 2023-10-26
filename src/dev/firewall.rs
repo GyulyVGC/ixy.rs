@@ -11,7 +11,7 @@ pub enum PacketDirection {
     Out,
 }
 
-#[derive(Default, Copy, Clone, Eq, PartialEq)]
+#[derive(Default, Copy, Clone, Eq, PartialEq, Debug)]
 pub enum FwAction {
     #[default]
     Accept,
@@ -121,6 +121,7 @@ impl IpCollection {
 // }
 
 /// Options associated to a specific firewall rule
+#[derive(Debug)]
 pub enum FwOption {
     /// Destination IP addresses
     Dest(IpCollection),
