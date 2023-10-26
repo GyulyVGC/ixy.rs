@@ -53,7 +53,7 @@ impl PortCollection {
 
     pub fn contains(&self, port: Option<u16>) -> bool {
         if let Some(num) = port.as_ref() {
-            for range in self.ranges {
+            for range in &self.ranges {
                 if range.contains(num) {
                     return true;
                 }
@@ -99,7 +99,7 @@ impl IpCollection {
 
     pub fn contains(&self, ip: Option<IpAddr>) -> bool {
         if let Some(addr) = ip.as_ref() {
-            for range in self.ranges {
+            for range in &self.ranges {
                 if range.contains(addr) {
                     return true;
                 }
