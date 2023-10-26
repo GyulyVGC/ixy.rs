@@ -1,8 +1,7 @@
 use crate::dev::fields::{get_dest, get_dport, get_proto, get_source, get_sport};
-use crate::dev::sniffer::PacketDirection;
 use etherparse::PacketHeaders;
 use std::net::IpAddr;
-use std::ops::{Range, RangeInclusive};
+use std::ops::{RangeInclusive};
 use std::str::FromStr;
 use std::u16;
 

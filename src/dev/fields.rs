@@ -1,6 +1,4 @@
-use crate::dev::firewall::IcmpType;
 use etherparse::{IpHeader, TransportHeader};
-use std::any::Any;
 use std::net::IpAddr;
 
 /// Extract header fields

@@ -9,8 +9,8 @@ use std::sync::atomic::{self, Ordering};
 use std::time::Duration;
 use std::{io, mem, slice, thread};
 
-use crate::dev::firewall::FwRule;
-use crate::dev::sniffer::{is_packet_blocked, print_packet_info, PacketDirection};
+use crate::dev::firewall::{FwRule, PacketDirection};
+use crate::dev::sniffer::{is_packet_blocked, print_packet_info};
 use crate::memory;
 use crate::memory::{Dma, Packet, PACKET_HEADROOM};
 use crate::pci::{self, read_io16, read_io32, read_io8, write_io16, write_io32, write_io8};
@@ -201,7 +201,7 @@ impl IxyDevice for VirtioDevice {
 
             // MATCH AGAINST FIREWALL RULES
             let is_packet_blocked =
-                is_packet_blocked(&buf[..], PacketDirection::Out, &self.firewall_rules);
+                is_packet_blocked(&packet[..], PacketDirection::Out, &self.firewall_rules);
 
             // SNIFF PACKETS
             print_packet_info(&packet[..], PacketDirection::Out, is_packet_blocked);
