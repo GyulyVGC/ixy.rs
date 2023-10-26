@@ -17,9 +17,9 @@ pub fn is_packet_blocked(
     }
 
     if action.eq(&FwAction::Accept) {
-        true
-    } else {
         false
+    } else {
+        true
     }
 }
 
