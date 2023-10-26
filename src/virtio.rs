@@ -9,8 +9,8 @@ use std::sync::atomic::{self, Ordering};
 use std::time::Duration;
 use std::{io, mem, slice, thread};
 
-use crate::dev::firewall::{FwRule, PacketDirection};
-use crate::dev::sniffer::{is_packet_blocked, print_packet_info};
+use crate::dev::firewall::{FwAction, FwRule, PacketDirection};
+use crate::dev::sniffer::{firewall_action_for_packet, print_packet_info};
 use crate::memory;
 use crate::memory::{Dma, Packet, PACKET_HEADROOM};
 use crate::pci::{self, read_io16, read_io32, read_io8, write_io16, write_io32, write_io8};
@@ -127,15 +127,15 @@ impl IxyDevice for VirtioDevice {
             ////////////////////////////////////////////////////////////////////////////////////////
 
             // MATCH AGAINST FIREWALL RULES
-            let is_packet_blocked =
-                is_packet_blocked(&buf[..], PacketDirection::In, &self.firewall_rules);
+            let action =
+                firewall_action_for_packet(&buf[..], PacketDirection::In, &self.firewall_rules);
 
             // SNIFF PACKETS
-            print_packet_info(&buf[..], PacketDirection::In, is_packet_blocked);
+            print_packet_info(&buf[..], PacketDirection::In, action);
 
             ////////////////////////////////////////////////////////////////////////////////////////
 
-            if !is_packet_blocked {
+            if action.eq(&FwAction::Accept) {
                 self.rx_bytes += buf.len as u64;
                 self.rx_pkts += 1;
                 buffer.push_back(buf);
@@ -200,13 +200,13 @@ impl IxyDevice for VirtioDevice {
             ////////////////////////////////////////////////////////////////////////////////////////
 
             // MATCH AGAINST FIREWALL RULES
-            let is_packet_blocked =
-                is_packet_blocked(&packet[..], PacketDirection::Out, &self.firewall_rules);
+            let action =
+                firewall_action_for_packet(&packet[..], PacketDirection::Out, &self.firewall_rules);
 
             // SNIFF PACKETS
-            print_packet_info(&packet[..], PacketDirection::Out, is_packet_blocked);
+            print_packet_info(&packet[..], PacketDirection::Out, action);
 
-            if is_packet_blocked {
+            if action.ne(&FwAction::Accept) {
                 continue;
             }
 

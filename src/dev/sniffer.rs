@@ -2,28 +2,23 @@ use crate::dev::firewall::{FwAction, FwRule, PacketDirection};
 use colored::Colorize;
 use etherparse::{IpHeader, PacketHeaders, TransportHeader};
 
-pub fn is_packet_blocked(
-    pkt_data: &[u8],
+pub fn firewall_action_for_packet(
+    packet: &[u8],
     direction: PacketDirection,
     firewall_rules: &Vec<FwRule>,
-) -> bool {
+) -> FwAction {
     let mut action = FwAction::default();
     let mut current_specificity = 0;
     for rule in firewall_rules {
-        if rule.matches_packet(pkt_data, &direction) && rule.specificity() >= current_specificity {
+        if rule.matches_packet(packet, &direction) && rule.specificity() >= current_specificity {
             current_specificity = rule.specificity();
             action = rule.action;
         }
     }
-
-    if action.eq(&FwAction::Accept) {
-        false
-    } else {
-        true
-    }
+    action
 }
 
-pub fn print_packet_info(pkt_data: &[u8], direction: PacketDirection, is_packet_blocked: bool) {
+pub fn print_packet_info(pkt_data: &[u8], direction: PacketDirection, action: FwAction) {
     let mut src_port = 0;
     let mut dst_port = 0;
     let mut src_mac = String::new();
@@ -36,11 +31,7 @@ pub fn print_packet_info(pkt_data: &[u8], direction: PacketDirection, is_packet_
     } else {
         "purple"
     };
-    let policy = if is_packet_blocked {
-        "DROPPED"
-    } else {
-        "ACCEPTED"
-    };
+    let policy = format!("{:?}", action);
     // total size (headers + payload)
     let size = pkt_data.len();
     if let Ok(headers) = PacketHeaders::from_ethernet_slice(pkt_data) {
