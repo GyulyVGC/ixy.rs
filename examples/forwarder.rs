@@ -63,6 +63,16 @@ pub fn main() {
 fn transmit(pci_addr: String) {
     let mut dev = ixy_init(&pci_addr, 1, 1, 0).unwrap();
 
+    // set custom firewall rules for the device (read from a file)
+    let mut firewall_rules = Vec::new();
+    let file = File::open("./examples/firewall.txt").unwrap();
+    for line in BufReader::new(file).lines() {
+        if let Ok(firewall_rule) = line {
+            firewall_rules.push(FwRule::new(&firewall_rule));
+        }
+    }
+    dev.set_firewall_rules(firewall_rules);
+
     // packet to send
     #[rustfmt::skip]
         let mut pkt_data = [
