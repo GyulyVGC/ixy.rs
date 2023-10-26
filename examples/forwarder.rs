@@ -1,15 +1,17 @@
 use colored::Colorize;
 use etherparse::{IpHeader, PacketHeaders, TransportHeader};
 use std::collections::VecDeque;
-use std::io::Write;
+use std::io::{BufRead, BufReader, Write};
 use std::net::TcpStream;
 use std::process;
 use std::time::Duration;
 use std::{env, thread};
+use std::fs::File;
 
 use ixy::dev::sniffer::{format_ipv4_address, format_ipv6_address};
 use ixy::memory::{alloc_pkt_batch, Mempool, Packet};
 use ixy::*;
+use ixy::dev::firewall::FwRule;
 
 // number of packets received simultaneously by our driver
 const BATCH_SIZE: usize = 32;
@@ -129,8 +131,15 @@ fn transmit(pci_addr: String) {
 fn receive(pci_addr: String) {
     let mut dev = ixy_init(&pci_addr, 1, 1, 0).unwrap();
 
-    // set custom firewall rules for the device
+    // set custom firewall rules for the device (read from a file)
     let mut firewall_rules = Vec::new();
+    let file = File::open("./examples/firewall.txt").unwrap();
+    for line in BufReader::new(file).lines() {
+        if let Ok(firewall_rule) = line {
+            firewall_rules.push(FwRule::new(&firewall_rule));
+        }
+    }
+    println!("FIREWALL RULES SET:\n{:?}", firewall_rules);
     dev.set_firewall_rules(firewall_rules);
 
     loop {

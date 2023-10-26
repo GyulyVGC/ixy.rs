@@ -188,6 +188,7 @@ impl FwOption {
 }
 
 /// A firewall rule
+#[derive(Debug)]
 pub struct FwRule {
     pub direction: PacketDirection,
     pub action: FwAction,
