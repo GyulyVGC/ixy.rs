@@ -1,3 +1,5 @@
+use std::any::Any;
+use std::collections::{HashMap, HashSet};
 use crate::dev::fields::{get_dest, get_dport, get_proto, get_source, get_sport};
 use etherparse::PacketHeaders;
 use std::net::IpAddr;
@@ -188,6 +190,16 @@ impl FwOption {
             false
         }
     }
+
+    pub fn to_option_str(&self) -> &str {
+        match self {
+            FwOption::Dest(_) => "--dest",
+            FwOption::Dport(_) => "--dport",
+            FwOption::Proto(_) => "--proto",
+            FwOption::Source(_) => "--sorce",
+            FwOption::Sport(_) => "--sport",
+        }
+    }
 }
 
 /// A firewall rule
@@ -234,6 +246,8 @@ impl FwRule {
             }
         }
 
+        FwRule::validate_options(options);
+
         Self {
             direction,
             action,
@@ -252,5 +266,19 @@ impl FwRule {
 
     pub fn specificity(&self) -> usize {
         self.options.len()
+    }
+
+    pub fn validate_options(options: Vec<FwOption>) {
+        let mut options_set = HashSet::new();
+
+        // check there is no duplicate options
+        for option in options {
+            if !options_set.insert(option.to_option_str()) {
+                panic!("Invalid format for firewall rule");
+            }
+        }
+
+        // remove --icmp-type option if protocol number is not compatible (WIP)
+        // from Proxmox VE documentation: --icmp-type is only valid if --proto equals icmp or icmpv6/ipv6-icmp
     }
 }
