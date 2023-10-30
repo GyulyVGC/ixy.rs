@@ -259,7 +259,7 @@ impl FwRule {
         self.options.len()
     }
 
-    pub fn validate_options(mut options: &Vec<FwOption>) {
+    pub fn validate_options(options: &mut Vec<FwOption>) {
         let mut options_map = HashMap::new();
 
         // check there is no duplicate options
