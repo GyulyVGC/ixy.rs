@@ -237,7 +237,7 @@ impl FwRule {
             }
         }
 
-        FwRule::validate_options(&mut options);
+        FwRule::validate_options(&options);
 
         Self {
             direction,
@@ -259,36 +259,28 @@ impl FwRule {
         self.options.len()
     }
 
-    pub fn validate_options(options: &mut Vec<FwOption>) {
+    pub fn validate_options(options: &Vec<FwOption>) {
         let mut options_map = HashMap::new();
 
         // check there is no duplicate options
-        for option in options.deref() {
+        for option in options {
             if options_map.insert(option.to_option_str(), option).is_some() {
                 panic!("Invalid format for firewall rule");
             }
         }
 
-        // remove --icmp-type option if protocol number is not compatible or absent
+        // if --icmp-type option is present, --proto 1 || --proto 58 must also be present
         // from Proxmox VE documentation: --icmp-type is only valid if --proto equals icmp or ipv6-icmp
         // icmp = 1, ipv6-icmp = 58 (<https://www.iana.org/assignments/protocol-numbers/protocol-numbers.xhtml>)
         if options_map.contains_key("--icmp-type") {
-            let mut remove_icmp_option = false;
             match options_map.get("--proto") {
                 None => {
-                    remove_icmp_option = true;
+                    panic!("Invalid format for firewall rule");
                 }
                 Some(FwOption::Proto(x)) if *x != 1 && *x != 58 => {
-                    remove_icmp_option = true;
+                    panic!("Invalid format for firewall rule");
                 }
                 _ => {}
-            }
-            if remove_icmp_option {
-                options
-                    .retain(|opt| match opt {
-                        FwOption::IcmpType(_) => false,
-                        _ => true,
-                    });
             }
         }
     }
