@@ -263,8 +263,8 @@ impl FwRule {
         let mut options_map = HashMap::new();
 
         // check there is no duplicate options
-        for option in options {
-            if options_map.insert(option.to_option_str(), option.deref()).is_some() {
+        for option in options.deref() {
+            if options_map.insert(option.to_option_str(), option).is_some() {
                 panic!("Invalid format for firewall rule");
             }
         }
