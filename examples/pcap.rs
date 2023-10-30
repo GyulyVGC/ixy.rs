@@ -1,6 +1,6 @@
 use std::collections::VecDeque;
 use std::fs::File;
-use std::io::{self, Write};
+use std::io::{self, BufRead, BufReader, Write};
 use std::time::{SystemTime, UNIX_EPOCH};
 use std::{env, process};
 
@@ -10,6 +10,7 @@ use etherparse::PacketHeaders;
 use ixy::memory::{alloc_pkt_batch, Mempool, Packet};
 use ixy::*;
 use simple_logger::SimpleLogger;
+use ixy::dev::firewall::FwRule;
 
 const BATCH_SIZE: usize = 32;
 
@@ -47,6 +48,16 @@ pub fn main() -> Result<(), io::Error> {
     pcap.write_u32::<LE>(1)?; // network: Ethernet
 
     let mut dev = ixy_init(&pci_addr, 1, 1, 0).unwrap();
+
+    // set custom firewall rules for the device (read from a file)
+    let mut firewall_rules = Vec::new();
+    let file = File::open("./examples/firewall.txt").unwrap();
+    for line in BufReader::new(file).lines() {
+        if let Ok(firewall_rule) = line {
+            firewall_rules.push(FwRule::new(&firewall_rule));
+        }
+    }
+    dev.set_firewall_rules(firewall_rules);
 
     println!("MAC address: {:02X?}", dev.get_mac_addr());
 
