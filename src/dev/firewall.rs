@@ -264,7 +264,8 @@ impl FwRule {
 
         // check there is no duplicate options
         for option in options {
-            if options_map.insert(option.to_option_str(), option).is_some() {
+            let key = option.to_option_str();
+            if options_map.insert(key, option).is_some() {
                 panic!("Invalid format for firewall rule");
             }
         }
