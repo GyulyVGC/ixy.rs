@@ -237,7 +237,7 @@ impl FwRule {
             }
         }
 
-        FwRule::validate_options(&options);
+        FwRule::validate_options(&mut options);
 
         Self {
             direction,
