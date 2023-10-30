@@ -115,24 +115,15 @@ impl IpCollection {
     }
 }
 
-// in the future I may implement this trait to achieve more robustness
-// impl std::str::FromStr for IpCollection {
-//     type Err = ();
-//
-//     fn from_str(s: &str) -> Result<Self, Self::Err> {
-//         todo!()
-//     }
-// }
-
 /// Options associated to a specific firewall rule
-#[derive(Debug)]
+#[derive(Debug, Eq, PartialEq)]
 pub enum FwOption {
     /// Destination IP addresses
     Dest(IpCollection),
     /// Destination ports
     Dport(PortCollection),
-    // /// ICMP message type
-    // IcmpType(u8),
+    /// ICMP message type
+    IcmpType(u8),
     /// IP protocol number
     Proto(u8),
     /// Source IP addresses
@@ -146,7 +137,9 @@ impl FwOption {
         match option {
             "--dest" => Self::Dest(IpCollection::new(value)),
             "--dport" => Self::Dport(PortCollection::new(value)),
-            // "--icmp-type" => ,
+            "--icmp-type" => {
+                Self::IcmpType(u8::from_str(value).expect("Invalid format for firewall rule"))
+            },
             "--proto" => {
                 Self::Proto(u8::from_str(value).expect("Invalid format for firewall rule"))
             }
@@ -165,14 +158,14 @@ impl FwOption {
                 FwOption::Dport(port_collection) => {
                     port_collection.contains(get_dport(transport_header))
                 }
-                // FwOption::IcmpType(icmp_type) => {
-                //     let observed_icmp = get_icmp_type(transport_header);
-                //     if observed_icmp.is_none() {
-                //         false
-                //     } else {
-                //         icmp_type.eq(&observed_icmp.unwrap())
-                //     }
-                // }
+                FwOption::IcmpType(icmp_type) => {
+                    let observed_icmp = get_icmp_type(transport_header);
+                    if observed_icmp.is_none() {
+                        false
+                    } else {
+                        icmp_type.eq(&observed_icmp.unwrap())
+                    }
+                }
                 FwOption::Proto(proto) => {
                     let observed_proto = get_proto(ip_header);
                     if observed_proto.is_none() {
@@ -198,6 +191,7 @@ impl FwOption {
             FwOption::Proto(_) => "--proto",
             FwOption::Source(_) => "--sorce",
             FwOption::Sport(_) => "--sport",
+            FwOption::IcmpType(_) => "--icmp-type"
         }
     }
 }
@@ -246,7 +240,7 @@ impl FwRule {
             }
         }
 
-        FwRule::validate_options(options);
+        FwRule::validate_options(&options);
 
         Self {
             direction,
@@ -268,17 +262,35 @@ impl FwRule {
         self.options.len()
     }
 
-    pub fn validate_options(options: Vec<FwOption>) {
-        let mut options_set = HashSet::new();
+    pub fn validate_options(mut options: &Vec<FwOption>) {
+        let mut options_map = HashMap::new();
 
         // check there is no duplicate options
         for option in options {
-            if !options_set.insert(option.to_option_str()) {
+            if options_map.insert(option.to_option_str(), option).is_some() {
                 panic!("Invalid format for firewall rule");
             }
         }
 
-        // remove --icmp-type option if protocol number is not compatible (WIP)
-        // from Proxmox VE documentation: --icmp-type is only valid if --proto equals icmp or icmpv6/ipv6-icmp
+        // remove --icmp-type option if protocol number is not compatible or absent
+        // from Proxmox VE documentation: --icmp-type is only valid if --proto equals icmp or ipv6-icmp
+        // icmp = 1, ipv6-icmp = 58 (<https://www.iana.org/assignments/protocol-numbers/protocol-numbers.xhtml>)
+        if options_map.contains_key("--icmp-type") {
+            let mut remove_icmp_option = false;
+            let proto_option = options_map.get("--proto");
+            if let Some(proto) = proto_option {
+                if proto.ne(&FwOption::Proto(1)) && proto.ne(&FwOption::Proto(58)) {
+                    remove_icmp_option = true;
+                }
+            } else {
+                remove_icmp_option = true;
+            }
+            if remove_icmp_option {
+                options = options.iter().filter(|opt| match opt {
+                    FwOption::IcmpType(_) => false,
+                    _ => true
+                }).collect();
+            }
+        }
     }
 }

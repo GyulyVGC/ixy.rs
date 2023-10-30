@@ -1,4 +1,4 @@
-use etherparse::{IpHeader, TransportHeader};
+use etherparse::{Icmpv4Type, Icmpv6Type, IpHeader, TransportHeader};
 use std::net::IpAddr;
 
 /// Extract header fields
@@ -60,14 +60,18 @@ pub fn get_proto(ip_header: Option<IpHeader>) -> Option<u8> {
     }
 }
 
-// pub fn get_icmp_type(transport_header: Option<TransportHeader>) -> Option<IcmpType> {
-//     if let Some(transport) = transport_header {
-//         return match transport {
-//             TransportHeader::Icmpv4(h) => Some(h.icmp_type.),
-//             TransportHeader::Icmpv6(h) => Some(IcmpType::Icmpv6),
-//             TransportHeader::Tcp(_) | TransportHeader::Udp(_) => None,
-//         };
-//     } else {
-//         None
-//     }
-// }
+pub fn get_icmp_type(transport_header: Option<TransportHeader>) -> Some(u8) {
+    if let Some(transport) = transport_header {
+        match transport {
+            TransportHeader::Icmpv4(h) => {
+                Some(h.to_bytes().first().unwrap())
+            },
+            TransportHeader::Icmpv6(h) => {
+                Some(h.to_bytes().first().unwrap())
+            },
+            TransportHeader::Tcp(_) | TransportHeader::Udp(_) => None,
+        }
+    } else {
+        None
+    }
+}
