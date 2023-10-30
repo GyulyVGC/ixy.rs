@@ -284,7 +284,7 @@ impl FwRule {
                 _ => {}
             }
             if remove_icmp_option {
-                options = options
+                options = &options
                     .drain(..)
                     .filter(|opt| match opt {
                         FwOption::IcmpType(_) => false,
