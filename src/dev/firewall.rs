@@ -1,5 +1,4 @@
-use std::any::Any;
-use std::collections::{HashMap, HashSet};
+use std::collections::{HashMap};
 use crate::dev::fields::{get_dest, get_dport, get_icmp_type, get_proto, get_source, get_sport};
 use etherparse::PacketHeaders;
 use std::net::IpAddr;
@@ -116,7 +115,7 @@ impl IpCollection {
 }
 
 /// Options associated to a specific firewall rule
-#[derive(Debug, Eq, PartialEq)]
+#[derive(Debug)]
 pub enum FwOption {
     /// Destination IP addresses
     Dest(IpCollection),
@@ -274,20 +273,14 @@ impl FwRule {
         // from Proxmox VE documentation: --icmp-type is only valid if --proto equals icmp or ipv6-icmp
         // icmp = 1, ipv6-icmp = 58 (<https://www.iana.org/assignments/protocol-numbers/protocol-numbers.xhtml>)
         if options_map.contains_key("--icmp-type") {
-            let mut remove_icmp_option = false;
-            let proto_option = options_map.get("--proto");
-            if let Some(proto) = proto_option {
-                if proto.ne(&FwOption::Proto(1)) && proto.ne(&FwOption::Proto(58)) {
-                    remove_icmp_option = true;
-                }
-            } else {
-                remove_icmp_option = true;
-            }
-            if remove_icmp_option {
-                options = options.iter().filter(|opt| match opt {
-                    FwOption::IcmpType(_) => false,
-                    _ => true
-                }).collect();
+            match options_map.get("--proto") {
+                None | Some(FwOption::Proto(x)) if x != 1 && x!= 58 => {
+                    options = options.iter().filter(|opt| match opt {
+                        FwOption::IcmpType(_) => false,
+                        _ => true
+                    }).collect();
+                },
+                _ => {}
             }
         }
     }

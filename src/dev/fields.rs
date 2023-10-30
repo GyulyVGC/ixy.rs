@@ -1,4 +1,4 @@
-use etherparse::{Icmpv4Type, Icmpv6Type, IpHeader, TransportHeader};
+use etherparse::{IpHeader, TransportHeader};
 use std::net::IpAddr;
 
 /// Extract header fields
