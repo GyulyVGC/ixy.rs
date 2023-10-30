@@ -2,7 +2,7 @@ use crate::dev::fields::{get_dest, get_dport, get_icmp_type, get_proto, get_sour
 use etherparse::PacketHeaders;
 use std::collections::HashMap;
 use std::net::IpAddr;
-use std::ops::RangeInclusive;
+use std::ops::{Deref, RangeInclusive};
 use std::str::FromStr;
 use std::u16;
 
@@ -264,8 +264,7 @@ impl FwRule {
 
         // check there is no duplicate options
         for option in options {
-            let key = option.to_option_str();
-            if options_map.insert(key, option).is_some() {
+            if options_map.insert(option.to_option_str(), option.deref()).is_some() {
                 panic!("Invalid format for firewall rule");
             }
         }
