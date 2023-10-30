@@ -60,14 +60,14 @@ pub fn get_proto(ip_header: Option<IpHeader>) -> Option<u8> {
     }
 }
 
-pub fn get_icmp_type(transport_header: Option<TransportHeader>) -> Some(u8) {
+pub fn get_icmp_type(transport_header: Option<TransportHeader>) -> Option<u8> {
     if let Some(transport) = transport_header {
         match transport {
             TransportHeader::Icmpv4(h) => {
-                Some(h.to_bytes().first().unwrap())
+                Some(*h.to_bytes().first().unwrap())
             },
             TransportHeader::Icmpv6(h) => {
-                Some(h.to_bytes().first().unwrap())
+                Some(*h.to_bytes().first().unwrap())
             },
             TransportHeader::Tcp(_) | TransportHeader::Udp(_) => None,
         }

@@ -1,6 +1,6 @@
 use std::any::Any;
 use std::collections::{HashMap, HashSet};
-use crate::dev::fields::{get_dest, get_dport, get_proto, get_source, get_sport};
+use crate::dev::fields::{get_dest, get_dport, get_icmp_type, get_proto, get_source, get_sport};
 use etherparse::PacketHeaders;
 use std::net::IpAddr;
 use std::ops::{RangeInclusive};
@@ -159,19 +159,17 @@ impl FwOption {
                     port_collection.contains(get_dport(transport_header))
                 }
                 FwOption::IcmpType(icmp_type) => {
-                    let observed_icmp = get_icmp_type(transport_header);
-                    if observed_icmp.is_none() {
-                        false
+                    if let Some(observed_icmp) = get_icmp_type(transport_header) {
+                        icmp_type.eq(&observed_icmp)
                     } else {
-                        icmp_type.eq(&observed_icmp.unwrap())
+                        false
                     }
                 }
                 FwOption::Proto(proto) => {
-                    let observed_proto = get_proto(ip_header);
-                    if observed_proto.is_none() {
-                        false
+                    if let Some(observed_proto) = get_proto(ip_header) {
+                        proto.eq(&observed_proto)
                     } else {
-                        proto.eq(&observed_proto.unwrap())
+                        false
                     }
                 }
                 FwOption::Source(ip_collection) => ip_collection.contains(get_source(ip_header)),
