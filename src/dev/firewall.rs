@@ -237,7 +237,7 @@ impl FwRule {
             }
         }
 
-        FwRule::validate_options(&options);
+        FwRule::validate_options(options);
 
         Self {
             direction,
@@ -259,7 +259,7 @@ impl FwRule {
         self.options.len()
     }
 
-    pub fn validate_options(mut options: &Vec<FwOption>) {
+    pub fn validate_options(mut options: Vec<FwOption>) {
         let mut options_map = HashMap::new();
 
         // check there is no duplicate options
@@ -284,7 +284,7 @@ impl FwRule {
                 _ => {}
             }
             if remove_icmp_option {
-                options = &options
+                options = options
                     .drain(..)
                     .filter(|opt| match opt {
                         FwOption::IcmpType(_) => false,
