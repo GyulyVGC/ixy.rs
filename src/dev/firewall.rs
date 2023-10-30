@@ -1,8 +1,8 @@
-use std::collections::{HashMap};
 use crate::dev::fields::{get_dest, get_dport, get_icmp_type, get_proto, get_source, get_sport};
 use etherparse::PacketHeaders;
+use std::collections::HashMap;
 use std::net::IpAddr;
-use std::ops::{RangeInclusive};
+use std::ops::RangeInclusive;
 use std::str::FromStr;
 use std::u16;
 
@@ -138,7 +138,7 @@ impl FwOption {
             "--dport" => Self::Dport(PortCollection::new(value)),
             "--icmp-type" => {
                 Self::IcmpType(u8::from_str(value).expect("Invalid format for firewall rule"))
-            },
+            }
             "--proto" => {
                 Self::Proto(u8::from_str(value).expect("Invalid format for firewall rule"))
             }
@@ -188,7 +188,7 @@ impl FwOption {
             FwOption::Proto(_) => "--proto",
             FwOption::Source(_) => "--sorce",
             FwOption::Sport(_) => "--sport",
-            FwOption::IcmpType(_) => "--icmp-type"
+            FwOption::IcmpType(_) => "--icmp-type",
         }
     }
 }
@@ -273,14 +273,24 @@ impl FwRule {
         // from Proxmox VE documentation: --icmp-type is only valid if --proto equals icmp or ipv6-icmp
         // icmp = 1, ipv6-icmp = 58 (<https://www.iana.org/assignments/protocol-numbers/protocol-numbers.xhtml>)
         if options_map.contains_key("--icmp-type") {
+            let mut remove_icmp_option = false;
             match options_map.get("--proto") {
-                None | Some(FwOption::Proto(x)) if x != 1 && x!= 58 => {
-                    options = options.iter().filter(|opt| match opt {
-                        FwOption::IcmpType(_) => false,
-                        _ => true
-                    }).collect();
-                },
+                None => {
+                    remove_icmp_option = true;
+                }
+                Some(FwOption::Proto(x)) if *x != 1 && *x != 58 => {
+                    remove_icmp_option = true;
+                }
                 _ => {}
+            }
+            if remove_icmp_option {
+                options = options
+                    .iter()
+                    .filter(|opt| match opt {
+                        FwOption::IcmpType(_) => false,
+                        _ => true,
+                    })
+                    .collect();
             }
         }
     }

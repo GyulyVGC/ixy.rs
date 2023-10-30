@@ -1,17 +1,17 @@
 use colored::Colorize;
 use etherparse::{IpHeader, PacketHeaders, TransportHeader};
 use std::collections::VecDeque;
+use std::fs::File;
 use std::io::{BufRead, BufReader, Write};
 use std::net::TcpStream;
 use std::process;
 use std::time::Duration;
 use std::{env, thread};
-use std::fs::File;
 
+use ixy::dev::firewall::FwRule;
 use ixy::dev::sniffer::{format_ipv4_address, format_ipv6_address};
 use ixy::memory::{alloc_pkt_batch, Mempool, Packet};
 use ixy::*;
-use ixy::dev::firewall::FwRule;
 
 // number of packets received simultaneously by our driver
 const BATCH_SIZE: usize = 32;
