@@ -13,12 +13,35 @@ pub enum PacketDirection {
     Out,
 }
 
+impl Display for PacketDirection {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        let str = match self {
+            PacketDirection::In => "IN",
+            PacketDirection::Out => "OUT",
+        };
+
+        write!(f, "{}", str)
+    }
+}
+
 #[derive(Default, Copy, Clone, Eq, PartialEq, Debug)]
 pub enum FwAction {
     #[default]
     Accept,
     Deny,
     Reject,
+}
+
+impl Display for FwAction {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        let str = match self {
+            FwAction::Accept => "ACCEPT",
+            FwAction::Deny => "DENY",
+            FwAction::Reject => "REJECT",
+        };
+
+        write!(f, "{}", str)
+    }
 }
 
 pub enum FwError {
