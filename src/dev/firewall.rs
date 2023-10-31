@@ -123,15 +123,24 @@ impl PortCollection {
                 // port range
                 let mut subparts = part.split(':');
                 let range = RangeInclusive::new(
-                    u16::from_str(subparts.next().expect(&FwError::InvalidPorts.to_string()))
-                        .expect(&FwError::InvalidPorts.to_string()),
-                    u16::from_str(subparts.next().expect(&FwError::InvalidPorts.to_string()))
-                        .expect(&FwError::InvalidPorts.to_string()),
+                    u16::from_str(
+                        subparts
+                            .next()
+                            .unwrap_or_else(|_| panic!("{}", FwError::InvalidPorts.to_string())),
+                    )
+                    .unwrap_or_else(|_| panic!("{}", FwError::InvalidPorts.to_string())),
+                    u16::from_str(
+                        subparts
+                            .next()
+                            .unwrap_or_else(|_| panic!("{}", FwError::InvalidPorts.to_string())),
+                    )
+                    .unwrap_or_else(|_| panic!("{}", FwError::InvalidPorts.to_string())),
                 );
                 ranges.push(range);
             } else {
                 // individual port
-                let port = u16::from_str(part).expect(&FwError::InvalidPorts.to_string());
+                let port = u16::from_str(part)
+                    .unwrap_or_else(|_| panic!("{}", FwError::InvalidPorts.to_string()));
                 ports.push(port);
             }
         }
@@ -170,15 +179,24 @@ impl IpCollection {
                 // IP range
                 let mut subparts = part.split('-');
                 let range = RangeInclusive::new(
-                    IpAddr::from_str(subparts.next().expect(&FwError::InvalidIps.to_string()))
-                        .expect(&FwError::InvalidIps.to_string()),
-                    IpAddr::from_str(subparts.next().expect(&FwError::InvalidIps.to_string()))
-                        .expect(&FwError::InvalidIps.to_string()),
+                    IpAddr::from_str(
+                        subparts
+                            .next()
+                            .unwrap_or_else(|_| panic!("{}", FwError::InvalidIps.to_string())),
+                    )
+                    .unwrap_or_else(|_| panic!("{}", FwError::InvalidIps.to_string())),
+                    IpAddr::from_str(
+                        subparts
+                            .next()
+                            .unwrap_or_else(|_| panic!("{}", FwError::InvalidIps.to_string())),
+                    )
+                    .unwrap_or_else(|_| panic!("{}", FwError::InvalidIps.to_string())),
                 );
                 ranges.push(range);
             } else {
                 // individual IP
-                let ip = IpAddr::from_str(part).expect(&FwError::InvalidIps.to_string());
+                let ip = IpAddr::from_str(part)
+                    .unwrap_or_else(|_| panic!("{}", FwError::InvalidIps.to_string()));
                 ips.push(ip);
             }
         }
@@ -229,12 +247,14 @@ impl FwOption {
         match option {
             FwOption::DEST => Self::Dest(IpCollection::new(value)),
             FwOption::DPORT => Self::Dport(PortCollection::new(value)),
-            FwOption::ICMPTYPE => {
-                Self::IcmpType(u8::from_str(value).expect(&FwError::InvalidIcmpType.to_string()))
-            }
-            FwOption::PROTO => {
-                Self::Proto(u8::from_str(value).expect(&FwError::InvalidProtocol.to_string()))
-            }
+            FwOption::ICMPTYPE => Self::IcmpType(
+                u8::from_str(value)
+                    .unwrap_or_else(|_| panic!("{}", FwError::InvalidIcmpType.to_string())),
+            ),
+            FwOption::PROTO => Self::Proto(
+                u8::from_str(value)
+                    .unwrap_or_else(|_| panic!("{}", FwError::InvalidProtocol.to_string())),
+            ),
             FwOption::SOURCE => Self::Source(IpCollection::new(value)),
             FwOption::SPORT => Self::Sport(PortCollection::new(value)),
             _ => panic!("{}", FwError::UnknownOption.to_string()),
@@ -301,15 +321,16 @@ impl FwRule {
         // rule direction
         let direction_str = parts
             .next()
-            .expect(&FwError::NotEnoughArguments.to_string());
-        let direction =
-            PacketDirection::from_str(direction_str).expect(&FwError::InvalidDirection.to_string());
+            .unwrap_or_else(|_| panic!("{}", FwError::NotEnoughArguments.to_string()));
+        let direction = PacketDirection::from_str(direction_str)
+            .unwrap_or_else(|_| panic!("{}", FwError::InvalidDirection.to_string()));
 
         // rule action
         let action_str = parts
             .next()
-            .expect(&FwError::NotEnoughArguments.to_string());
-        let action = FwAction::from_str(action_str).expect(&FwError::InvalidAction.to_string());
+            .unwrap_or_else(|_| panic!("{}", FwError::NotEnoughArguments.to_string()));
+        let action = FwAction::from_str(action_str)
+            .unwrap_or_else(|_| panic!("{}", FwError::InvalidAction.to_string()));
 
         // rule options
         let mut options = Vec::new();
@@ -318,7 +339,9 @@ impl FwRule {
             if option.is_some() {
                 let firewall_option = FwOption::new(
                     option.unwrap(),
-                    parts.next().expect(&FwError::EmptyOption.to_string()),
+                    parts
+                        .next()
+                        .unwrap_or_else(|_| panic!("{}", FwError::EmptyOption.to_string())),
                 );
                 options.push(firewall_option);
             } else {
