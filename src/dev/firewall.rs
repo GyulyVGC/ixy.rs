@@ -69,6 +69,7 @@ impl FromStr for FwAction {
     }
 }
 
+#[derive(Debug)]
 pub enum FwError {
     InvalidPorts,
     InvalidIps,
