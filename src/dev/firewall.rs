@@ -24,6 +24,18 @@ impl Display for PacketDirection {
     }
 }
 
+impl FromStr for PacketDirection {
+    type Err = FwError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "IN" => Ok(Self::In),
+            "OUT" => Ok(Self::Out),
+            _ => Err(FwError::InvalidDirection),
+        }
+    }
+}
+
 #[derive(Default, Copy, Clone, Eq, PartialEq, Debug)]
 pub enum FwAction {
     #[default]
@@ -41,6 +53,19 @@ impl Display for FwAction {
         };
 
         write!(f, "{}", str)
+    }
+}
+
+impl FromStr for FwAction {
+    type Err = FwError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "ACCEPT" => Ok(Self::Accept),
+            "DENY" => Ok(Self::Deny),
+            "REJECT" => Ok(Self::Reject),
+            _ => Err(FwError::InvalidAction),
+        }
     }
 }
 
