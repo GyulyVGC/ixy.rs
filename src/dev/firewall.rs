@@ -287,7 +287,7 @@ impl FwOption {
 }
 
 /// A firewall rule
-#[derive(Debug)]
+#[derive(Debug, Eq, PartialEq)]
 pub struct FwRule {
     pub direction: PacketDirection,
     pub action: FwAction,
@@ -377,7 +377,8 @@ impl FwRule {
 
 #[cfg(test)]
 mod tests {
-    use crate::dev::firewall::{FwOption, IpCollection, PortCollection};
+    use crate::dev::firewall::{FwAction, FwOption, IpCollection, PacketDirection, PortCollection};
+    use crate::FwRule;
     use std::net::IpAddr;
     use std::ops::RangeInclusive;
     use std::str::FromStr;
@@ -391,6 +392,7 @@ mod tests {
                 ranges: vec![]
             }
         );
+
         assert_eq!(
             PortCollection::new("1,2,3,4,900:999"),
             PortCollection {
@@ -398,6 +400,7 @@ mod tests {
                 ranges: vec![900..=999]
             }
         );
+
         assert_eq!(
             PortCollection::new("1:999"),
             PortCollection {
@@ -405,6 +408,7 @@ mod tests {
                 ranges: vec![1..=999]
             }
         );
+
         assert_eq!(
             PortCollection::new("1,2,10:20,3,4,999:1200"),
             PortCollection {
@@ -412,10 +416,13 @@ mod tests {
                 ranges: vec![10..=20, 999..=1200]
             }
         );
+
         assert!(std::panic::catch_unwind(|| PortCollection::new("1,2,10:20,3,4,:1200")).is_err());
+
         assert!(
             std::panic::catch_unwind(|| PortCollection::new("1,2,10:20,3,4,999-1200")).is_err()
         );
+
         assert!(
             std::panic::catch_unwind(|| PortCollection::new("1,2,10:20,3,4,999-1200,")).is_err()
         );
@@ -433,6 +440,7 @@ mod tests {
                 ranges: vec![]
             }
         );
+
         assert_eq!(
             IpCollection::new("1.1.1.1,2.2.2.2,3.3.3.3-5.5.5.5,10.0.0.1-10.0.0.255,9.9.9.9"),
             IpCollection {
@@ -453,6 +461,7 @@ mod tests {
                 ]
             }
         );
+
         assert_eq!(
             IpCollection::new("aaaa::ffff,bbbb::1-cccc::2"),
             IpCollection {
@@ -463,10 +472,12 @@ mod tests {
                 )]
             }
         );
+
         assert!(std::panic::catch_unwind(|| IpCollection::new(
             "1.1.1.1,2.2.2.2,3.3.3.3-5.5.5.5,10.0.0.1-10.0.0.255,9.9.9"
         ))
         .is_err());
+
         assert!(std::panic::catch_unwind(|| IpCollection::new(
             "1.1.1.1,2.2.2.2,3.3.3.3-5.5.5.5,10.0.0.1:10.0.0.255,9.9.9.9"
         ))
@@ -489,7 +500,8 @@ mod tests {
 
     #[test]
     fn test_ip_collection_contains() {
-        let collection = IpCollection::new("1.1.1.1,2.2.2.2,3.3.3.3-5.5.5.5,10.0.0.1-10.0.0.255,9.9.9.9");
+        let collection =
+            IpCollection::new("1.1.1.1,2.2.2.2,3.3.3.3-5.5.5.5,10.0.0.1-10.0.0.255,9.9.9.9");
         assert!(collection.contains(Some(IpAddr::from_str("2.2.2.2").unwrap())));
         assert!(collection.contains(Some(IpAddr::from_str("4.0.0.0").unwrap())));
         assert!(collection.contains(Some(IpAddr::from_str("9.9.9.9").unwrap())));
@@ -504,29 +516,124 @@ mod tests {
     #[test]
     fn test_new_firewall_options() {
         assert_eq!(
-            FwOption::new("--dest", "1.1.1.1,2.2.2.2,3.3.3.3-5.5.5.5,10.0.0.1-10.0.0.255,9.9.9.9"),
-            FwOption::Dest(IpCollection::new("1.1.1.1,2.2.2.2,3.3.3.3-5.5.5.5,10.0.0.1-10.0.0.255,9.9.9.9"))
+            FwOption::new(
+                "--dest",
+                "1.1.1.1,2.2.2.2,3.3.3.3-5.5.5.5,10.0.0.1-10.0.0.255,9.9.9.9"
+            ),
+            FwOption::Dest(IpCollection::new(
+                "1.1.1.1,2.2.2.2,3.3.3.3-5.5.5.5,10.0.0.1-10.0.0.255,9.9.9.9"
+            ))
         );
+
         assert_eq!(
             FwOption::new("--dport", "1,2,10:20,3,4,999:1200"),
             FwOption::Dport(PortCollection::new("1,2,10:20,3,4,999:1200"))
         );
+
+        assert_eq!(FwOption::new("--icmp-type", "8"), FwOption::IcmpType(8));
+
+        assert_eq!(FwOption::new("--proto", "1"), FwOption::Proto(1));
+
         assert_eq!(
-            FwOption::new("--icmp-type", "8"),
-            FwOption::IcmpType(8)
+            FwOption::new(
+                "--source",
+                "1.1.1.1,2.2.2.2,3.3.3.3-5.5.5.5,10.0.0.1-10.0.0.255,9.9.9.9"
+            ),
+            FwOption::Source(IpCollection::new(
+                "1.1.1.1,2.2.2.2,3.3.3.3-5.5.5.5,10.0.0.1-10.0.0.255,9.9.9.9"
+            ))
         );
-        assert_eq!(
-            FwOption::new("--proto", "1"),
-            FwOption::Proto(1)
-        );
-        assert_eq!(
-            FwOption::new("--source", "1.1.1.1,2.2.2.2,3.3.3.3-5.5.5.5,10.0.0.1-10.0.0.255,9.9.9.9"),
-            FwOption::Source(IpCollection::new("1.1.1.1,2.2.2.2,3.3.3.3-5.5.5.5,10.0.0.1-10.0.0.255,9.9.9.9"))
-        );
+
         assert_eq!(
             FwOption::new("--sport", "1,2,10:20,3,4,999:1200"),
             FwOption::Sport(PortCollection::new("1,2,10:20,3,4,999:1200"))
         );
+
         assert!(std::panic::catch_unwind(|| FwOption::new("--not-exists", "8.8.8.8")).is_err());
+    }
+
+    #[test]
+    fn test_new_firewall_rules() {
+        assert_eq!(
+            FwRule::new("OUT ACCEPT --source 8.8.8.8,7.7.7.7 --dport 900:1000,1,2,3"),
+            FwRule {
+                direction: PacketDirection::Out,
+                action: FwAction::Accept,
+                options: vec![
+                    FwOption::Source(IpCollection::new("8.8.8.8,7.7.7.7")),
+                    FwOption::Dport(PortCollection::new("900:1000,1,2,3"))
+                ]
+            }
+        );
+
+        assert_eq!(
+            FwRule::new("OUT REJECT --source 8.8.8.8,7.7.7.7 --dport 900:1000,1,2,3 --icmp-type 8 --proto 1"),
+            FwRule {
+                direction: PacketDirection::Out,
+                action: FwAction::Reject,
+                options: vec![
+                    FwOption::Source(IpCollection::new("8.8.8.8,7.7.7.7")),
+                    FwOption::Dport(PortCollection::new("900:1000,1,2,3")),
+                    FwOption::IcmpType(8),
+                    FwOption::Proto(1)
+                ]
+            }
+        );
+
+        assert_eq!(
+            FwRule::new(
+                "IN DENY --dest 8.8.8.8,7.7.7.7 --sport 900:1000,1,2,3 --icmp-type 1 --proto 58"
+            ),
+            FwRule {
+                direction: PacketDirection::In,
+                action: FwAction::Deny,
+                options: vec![
+                    FwOption::Dest(IpCollection::new("8.8.8.8,7.7.7.7")),
+                    FwOption::Sport(PortCollection::new("900:1000,1,2,3")),
+                    FwOption::IcmpType(1),
+                    FwOption::Proto(58)
+                ]
+            }
+        );
+
+        assert!(std::panic::catch_unwind(|| FwRule::new(
+            "ACCEPT OUT --source 8.8.8.8,7.7.7.7 --dport 900:1000,1,2,3"
+        ))
+        .is_err());
+
+        assert!(std::panic::catch_unwind(|| FwRule::new(
+            "OUT ACCEPT --source 8.8.8.8,7.7.7.7 --dport"
+        ))
+        .is_err());
+
+        assert!(std::panic::catch_unwind(|| FwRule::new(
+            "OUT ACCEPT --dport 8 --source 8.8.8.8,7.7.7.7 --dport 900:1000,1,2,3"
+        ))
+        .is_err());
+
+        assert!(std::panic::catch_unwind(|| FwRule::new(
+            "OUT ACCEPT --source 8.8.8.8,7.7.7.7 --dport 900:1000,1,2,3.3.3.3"
+        ))
+        .is_err());
+
+        assert!(std::panic::catch_unwind(|| FwRule::new(
+            "OUT ACCEPT --source 8.8.8.8,7.7.7.7 --dport 900:1000,1,2,3 --icmp-type 8"
+        ))
+        .is_err());
+
+        assert!(std::panic::catch_unwind(|| FwRule::new(
+            "OUT ACCEPT --source 8.8.8.8,7.7.7.7 --dport 900:1000,1,2,3 --icmp-type 8 --proto 57"
+        ))
+        .is_err());
+
+        assert!(std::panic::catch_unwind(|| FwRule::new(
+            "UP ACCEPT --source 8.8.8.8,7.7.7.7 --dport 900:1000,1,2,3"
+        ))
+        .is_err());
+
+        assert!(std::panic::catch_unwind(|| FwRule::new(
+            "OUT PUTAWAY --source 8.8.8.8,7.7.7.7 --dport 900:1000,1,2,3"
+        ))
+        .is_err());
     }
 }
