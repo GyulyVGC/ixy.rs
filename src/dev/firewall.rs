@@ -100,7 +100,7 @@ impl Display for FwError {
             FwError::NotApplicableIcmpType => "--icmp-type is only valid for protocol numbers 1 or 58",
         };
 
-        write!(f, "Firewall error: {}", err_info)
+        write!(f, "Firewall error - {}", err_info)
     }
 }
 
