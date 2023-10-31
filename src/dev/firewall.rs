@@ -377,7 +377,7 @@ impl FwRule {
 
 #[cfg(test)]
 mod tests {
-    use crate::dev::firewall::{IpCollection, PortCollection};
+    use crate::dev::firewall::{FwOption, IpCollection, PortCollection};
     use std::net::IpAddr;
     use std::ops::RangeInclusive;
     use std::str::FromStr;
@@ -496,7 +496,37 @@ mod tests {
         assert!(collection.contains(Some(IpAddr::from_str("10.0.0.1").unwrap())));
         assert!(collection.contains(Some(IpAddr::from_str("10.0.0.128").unwrap())));
         assert!(collection.contains(Some(IpAddr::from_str("10.0.0.255").unwrap())));
+        assert!(!collection.contains(None));
         assert!(!collection.contains(Some(IpAddr::from_str("10.0.0.0").unwrap())));
         assert!(!collection.contains(Some(IpAddr::from_str("2.2.2.1").unwrap())));
+    }
+
+    #[test]
+    fn test_new_firewall_options() {
+        assert_eq!(
+            FwOption::new("--dest", "1.1.1.1,2.2.2.2,3.3.3.3-5.5.5.5,10.0.0.1-10.0.0.255,9.9.9.9"),
+            FwOption::Dest(IpCollection::new("1.1.1.1,2.2.2.2,3.3.3.3-5.5.5.5,10.0.0.1-10.0.0.255,9.9.9.9"))
+        );
+        assert_eq!(
+            FwOption::new("--dport", "1,2,10:20,3,4,999:1200"),
+            FwOption::Dport(PortCollection::new("1,2,10:20,3,4,999:1200"))
+        );
+        assert_eq!(
+            FwOption::new("--icmp-type", "8"),
+            FwOption::IcmpType(8)
+        );
+        assert_eq!(
+            FwOption::new("--proto", "1"),
+            FwOption::Proto(1)
+        );
+        assert_eq!(
+            FwOption::new("--source", "1.1.1.1,2.2.2.2,3.3.3.3-5.5.5.5,10.0.0.1-10.0.0.255,9.9.9.9"),
+            FwOption::Source(IpCollection::new("1.1.1.1,2.2.2.2,3.3.3.3-5.5.5.5,10.0.0.1-10.0.0.255,9.9.9.9"))
+        );
+        assert_eq!(
+            FwOption::new("--sport", "1,2,10:20,3,4,999:1200"),
+            FwOption::Sport(PortCollection::new("1,2,10:20,3,4,999:1200"))
+        );
+        assert!(std::panic::catch_unwind(|| FwOption::new("--not-exists", "8.8.8.8")).is_err());
     }
 }
