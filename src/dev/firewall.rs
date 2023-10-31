@@ -126,21 +126,21 @@ impl PortCollection {
                     u16::from_str(
                         subparts
                             .next()
-                            .unwrap_or_else(|| panic!("{}", FwError::InvalidPorts.to_string())),
+                            .unwrap_or_else(|_| panic!("{}", FwError::InvalidPorts.to_string())),
                     )
-                    .unwrap_or_else(|| panic!("{}", FwError::InvalidPorts.to_string())),
+                    .unwrap_or_else(|_| panic!("{}", FwError::InvalidPorts.to_string())),
                     u16::from_str(
                         subparts
                             .next()
-                            .unwrap_or_else(|| panic!("{}", FwError::InvalidPorts.to_string())),
+                            .unwrap_or_else(|_| panic!("{}", FwError::InvalidPorts.to_string())),
                     )
-                    .unwrap_or_else(|| panic!("{}", FwError::InvalidPorts.to_string())),
+                    .unwrap_or_else(|_| panic!("{}", FwError::InvalidPorts.to_string())),
                 );
                 ranges.push(range);
             } else {
                 // individual port
                 let port = u16::from_str(part)
-                    .unwrap_or_else(|| panic!("{}", FwError::InvalidPorts.to_string()));
+                    .unwrap_or_else(|_| panic!("{}", FwError::InvalidPorts.to_string()));
                 ports.push(port);
             }
         }
@@ -182,21 +182,21 @@ impl IpCollection {
                     IpAddr::from_str(
                         subparts
                             .next()
-                            .unwrap_or_else(|| panic!("{}", FwError::InvalidIps.to_string())),
+                            .unwrap_or_else(|_| panic!("{}", FwError::InvalidIps.to_string())),
                     )
-                    .unwrap_or_else(|| panic!("{}", FwError::InvalidIps.to_string())),
+                    .unwrap_or_else(|_| panic!("{}", FwError::InvalidIps.to_string())),
                     IpAddr::from_str(
                         subparts
                             .next()
-                            .unwrap_or_else(|| panic!("{}", FwError::InvalidIps.to_string())),
+                            .unwrap_or_else(|_| panic!("{}", FwError::InvalidIps.to_string())),
                     )
-                    .unwrap_or_else(|| panic!("{}", FwError::InvalidIps.to_string())),
+                    .unwrap_or_else(|_| panic!("{}", FwError::InvalidIps.to_string())),
                 );
                 ranges.push(range);
             } else {
                 // individual IP
                 let ip = IpAddr::from_str(part)
-                    .unwrap_or_else(|| panic!("{}", FwError::InvalidIps.to_string()));
+                    .unwrap_or_else(|_| panic!("{}", FwError::InvalidIps.to_string()));
                 ips.push(ip);
             }
         }
@@ -249,11 +249,11 @@ impl FwOption {
             FwOption::DPORT => Self::Dport(PortCollection::new(value)),
             FwOption::ICMPTYPE => Self::IcmpType(
                 u8::from_str(value)
-                    .unwrap_or_else(|| panic!("{}", FwError::InvalidIcmpType.to_string())),
+                    .unwrap_or_else(|_| panic!("{}", FwError::InvalidIcmpType.to_string())),
             ),
             FwOption::PROTO => Self::Proto(
                 u8::from_str(value)
-                    .unwrap_or_else(|| panic!("{}", FwError::InvalidProtocol.to_string())),
+                    .unwrap_or_else(|_| panic!("{}", FwError::InvalidProtocol.to_string())),
             ),
             FwOption::SOURCE => Self::Source(IpCollection::new(value)),
             FwOption::SPORT => Self::Sport(PortCollection::new(value)),
@@ -321,16 +321,16 @@ impl FwRule {
         // rule direction
         let direction_str = parts
             .next()
-            .unwrap_or_else(|| panic!("{}", FwError::NotEnoughArguments.to_string()));
+            .unwrap_or_else(|_| panic!("{}", FwError::NotEnoughArguments.to_string()));
         let direction = PacketDirection::from_str(direction_str)
-            .unwrap_or_else(|| panic!("{}", FwError::InvalidDirection.to_string()));
+            .unwrap_or_else(|_| panic!("{}", FwError::InvalidDirection.to_string()));
 
         // rule action
         let action_str = parts
             .next()
-            .unwrap_or_else(|| panic!("{}", FwError::NotEnoughArguments.to_string()));
+            .unwrap_or_else(|_| panic!("{}", FwError::NotEnoughArguments.to_string()));
         let action = FwAction::from_str(action_str)
-            .unwrap_or_else(|| panic!("{}", FwError::InvalidAction.to_string()));
+            .unwrap_or_else(|_| panic!("{}", FwError::InvalidAction.to_string()));
 
         // rule options
         let mut options = Vec::new();
@@ -341,7 +341,7 @@ impl FwRule {
                     option.unwrap(),
                     parts
                         .next()
-                        .unwrap_or_else(|| panic!("{}", FwError::EmptyOption.to_string())),
+                        .unwrap_or_else(|_| panic!("{}", FwError::EmptyOption.to_string())),
                 );
                 options.push(firewall_option);
             } else {
