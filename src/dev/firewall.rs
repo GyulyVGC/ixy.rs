@@ -215,18 +215,25 @@ pub enum FwOption {
 }
 
 impl FwOption {
+    const DEST: &'static str = "--dest";
+    const DPORT: &'static str = "--dport";
+    const ICMPTYPE: &'static str = "--icmp-type";
+    const PROTO: &'static str = "--proto";
+    const SOURCE: &'static str = "--source";
+    const SPORT: &'static str = "--sport";
+
     pub fn new(option: &str, value: &str) -> Self {
         match option {
-            "--dest" => Self::Dest(IpCollection::new(value)),
-            "--dport" => Self::Dport(PortCollection::new(value)),
-            "--icmp-type" => {
+            FwOption::DEST => Self::Dest(IpCollection::new(value)),
+            FwOption::DPORT => Self::Dport(PortCollection::new(value)),
+            FwOption::ICMPTYPE => {
                 Self::IcmpType(u8::from_str(value).expect(&FwError::InvalidIcmpType.to_string()))
             }
-            "--proto" => {
+            FwOption::PROTO => {
                 Self::Proto(u8::from_str(value).expect(&FwError::InvalidProtocol.to_string()))
             }
-            "--source" => Self::Source(IpCollection::new(value)),
-            "--sport" => Self::Sport(PortCollection::new(value)),
+            FwOption::SOURCE => Self::Source(IpCollection::new(value)),
+            FwOption::SPORT => Self::Sport(PortCollection::new(value)),
             _ => panic!(FwError::UnknownOption.to_string()),
         }
     }
@@ -266,12 +273,12 @@ impl FwOption {
 
     pub fn to_option_str(&self) -> &str {
         match self {
-            FwOption::Dest(_) => "--dest",
-            FwOption::Dport(_) => "--dport",
-            FwOption::Proto(_) => "--proto",
-            FwOption::Source(_) => "--sorce",
-            FwOption::Sport(_) => "--sport",
-            FwOption::IcmpType(_) => "--icmp-type",
+            FwOption::Dest(_) => FwOption::DEST,
+            FwOption::Dport(_) => FwOption::DPORT,
+            FwOption::Proto(_) => FwOption::PROTO,
+            FwOption::Source(_) => FwOption::SOURCE,
+            FwOption::Sport(_) => FwOption::SPORT,
+            FwOption::IcmpType(_) => FwOption::ICMPTYPE,
         }
     }
 }
@@ -290,20 +297,11 @@ impl FwRule {
 
         // rule direction
         let direction_str = parts.next().expect(&FwError::NotEnoughArguments.to_string());
-        let direction = match direction_str {
-            "IN" => PacketDirection::In,
-            "OUT" => PacketDirection::Out,
-            _ => panic!(FwError::InvalidDirection.to_string()),
-        };
+        let direction = PacketDirection::from_str(direction_str).expect(&FwError::InvalidDirection.to_string());
 
         // rule action
         let action_str = parts.next().expect(&FwError::NotEnoughArguments.to_string());
-        let action = match action_str {
-            "ACCEPT" => FwAction::Accept,
-            "DENY" => FwAction::Deny,
-            "REJECT" => FwAction::Reject,
-            _ => panic!(FwError::InvalidAction.to_string()),
-        };
+        let action = FwAction::from_str(action_str).expect(&FwError::InvalidAction.to_string());
 
         // rule options
         let mut options = Vec::new();
@@ -355,8 +353,8 @@ impl FwRule {
         // if --icmp-type option is present, --proto 1 || --proto 58 must also be present
         // from Proxmox VE documentation: --icmp-type is only valid if --proto equals icmp or ipv6-icmp
         // icmp = 1, ipv6-icmp = 58 (<https://www.iana.org/assignments/protocol-numbers/protocol-numbers.xhtml>)
-        if options_map.contains_key("--icmp-type") {
-            match options_map.get("--proto") {
+        if options_map.contains_key(FwOption::ICMPTYPE) {
+            match options_map.get(FwOption::PROTO) {
                 None => {
                     panic!(FwError::NotApplicableIcmpType.to_string());
                 }
