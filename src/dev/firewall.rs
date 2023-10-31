@@ -472,4 +472,31 @@ mod tests {
         ))
         .is_err());
     }
+
+    #[test]
+    fn test_port_collection_contains() {
+        let collection = PortCollection::new("1,2,25:30");
+        assert!(collection.contains(Some(1)));
+        assert!(collection.contains(Some(2)));
+        assert!(collection.contains(Some(25)));
+        assert!(collection.contains(Some(27)));
+        assert!(collection.contains(Some(30)));
+        assert!(!collection.contains(None));
+        assert!(!collection.contains(Some(24)));
+        assert!(!collection.contains(Some(31)));
+        assert!(!collection.contains(Some(8080)));
+    }
+
+    #[test]
+    fn test_ip_collection_contains() {
+        let collection = IpCollection::new("1.1.1.1,2.2.2.2,3.3.3.3-5.5.5.5,10.0.0.1-10.0.0.255,9.9.9.9");
+        assert!(collection.contains(Some(IpAddr::from_str("2.2.2.2").unwrap())));
+        assert!(collection.contains(Some(IpAddr::from_str("4.0.0.0").unwrap())));
+        assert!(collection.contains(Some(IpAddr::from_str("9.9.9.9").unwrap())));
+        assert!(collection.contains(Some(IpAddr::from_str("10.0.0.1").unwrap())));
+        assert!(collection.contains(Some(IpAddr::from_str("10.0.0.128").unwrap())));
+        assert!(collection.contains(Some(IpAddr::from_str("10.0.0.255").unwrap())));
+        assert!(!collection.contains(Some(IpAddr::from_str("10.0.0.0").unwrap())));
+        assert!(!collection.contains(Some(IpAddr::from_str("2.2.2.1").unwrap())));
+    }
 }
