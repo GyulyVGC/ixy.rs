@@ -1,6 +1,7 @@
 use crate::dev::fields::{get_dest, get_dport, get_icmp_type, get_proto, get_source, get_sport};
 use etherparse::PacketHeaders;
 use std::collections::HashMap;
+use std::fmt::{Display, Formatter};
 use std::net::IpAddr;
 use std::ops::{RangeInclusive};
 use std::str::FromStr;
@@ -20,6 +21,40 @@ pub enum FwAction {
     Reject,
 }
 
+pub enum FwError {
+    InvalidPorts,
+    InvalidIps,
+    InvalidIcmpType,
+    InvalidProtocol,
+    InvalidDirection,
+    InvalidAction,
+    UnknownOption,
+    NotEnoughArguments,
+    EmptyOption,
+    DuplicatedOption,
+    NotApplicableIcmpType,
+}
+
+impl Display for FwError {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        let err_info = match self {
+            FwError::InvalidPorts => "incorrect port(s) specification",
+            FwError::InvalidIps => "incorrect IP(s) specification",
+            FwError::InvalidIcmpType => "incorrect ICMP type specification",
+            FwError::InvalidProtocol => "incorrect protocol specification",
+            FwError::InvalidDirection => "incorrect direction",
+            FwError::InvalidAction => "incorrect action",
+            FwError::UnknownOption => "the specified option doesn't exists",
+            FwError::NotEnoughArguments => "not enough arguments supplied for rule",
+            FwError::EmptyOption => "each option must have a value",
+            FwError::DuplicatedOption => "duplicated option for the same rule",
+            FwError::NotApplicableIcmpType => "--icmp-type is only valid for protocol numbers 1 or 58",
+        };
+
+        write!(f, "Firewall error: {}", err_info)
+    }
+}
+
 #[derive(Debug)]
 pub struct PortCollection {
     pub ports: Vec<u16>,
@@ -37,15 +72,15 @@ impl PortCollection {
                 // port range
                 let mut subparts = part.split(':');
                 let range = RangeInclusive::new(
-                    u16::from_str(subparts.next().expect("Invalid format for firewall rule: incorrect port specification"))
-                        .expect("Invalid format for firewall rule: incorrect port specification"),
-                    u16::from_str(subparts.next().expect("Invalid format for firewall rule: incorrect port specification"))
-                        .expect("Invalid format for firewall rule: incorrect port specification"),
+                    u16::from_str(subparts.next().expect(&FwError::InvalidPorts.to_string()))
+                        .expect(&FwError::InvalidPorts.to_string()),
+                    u16::from_str(subparts.next().expect(&FwError::InvalidPorts.to_string()))
+                        .expect(&FwError::InvalidPorts.to_string()),
                 );
                 ranges.push(range);
             } else {
-                // individual IP
-                let port = u16::from_str(part).expect("Invalid format for firewall rule: incorrect port specification");
+                // individual port
+                let port = u16::from_str(part).expect(&FwError::InvalidPorts.to_string());
                 ports.push(port);
             }
         }
@@ -84,15 +119,15 @@ impl IpCollection {
                 // IP range
                 let mut subparts = part.split('-');
                 let range = RangeInclusive::new(
-                    IpAddr::from_str(subparts.next().expect("Invalid format for firewall rule: incorrect IP specification"))
-                        .expect("Invalid format for firewall rule: incorrect IP specification"),
-                    IpAddr::from_str(subparts.next().expect("Invalid format for firewall rule: incorrect IP specification"))
-                        .expect("Invalid format for firewall rule: incorrect IP specification"),
+                    IpAddr::from_str(subparts.next().expect(&FwError::InvalidIps.to_string()))
+                        .expect(&FwError::InvalidIps.to_string()),
+                    IpAddr::from_str(subparts.next().expect(&FwError::InvalidIps.to_string()))
+                        .expect(&FwError::InvalidIps.to_string()),
                 );
                 ranges.push(range);
             } else {
                 // individual IP
-                let ip = IpAddr::from_str(part).expect("Invalid format for firewall rule: incorrect IP specification");
+                let ip = IpAddr::from_str(part).expect(&FwError::InvalidIps.to_string());
                 ips.push(ip);
             }
         }
@@ -137,14 +172,14 @@ impl FwOption {
             "--dest" => Self::Dest(IpCollection::new(value)),
             "--dport" => Self::Dport(PortCollection::new(value)),
             "--icmp-type" => {
-                Self::IcmpType(u8::from_str(value).expect("Invalid format for firewall rule: incorrect ICMP type specification"))
+                Self::IcmpType(u8::from_str(value).expect(&FwError::InvalidIcmpType.to_string()))
             }
             "--proto" => {
-                Self::Proto(u8::from_str(value).expect("Invalid format for firewall rule: incorrect protocol specification"))
+                Self::Proto(u8::from_str(value).expect(&FwError::InvalidProtocol.to_string()))
             }
             "--source" => Self::Source(IpCollection::new(value)),
             "--sport" => Self::Sport(PortCollection::new(value)),
-            not_exists => panic!("Invalid format for firewall rule: incorrect option supplied ({})", not_exists),
+            _ => panic!(FwError::UnknownOption.to_string()),
         }
     }
 
@@ -206,20 +241,20 @@ impl FwRule {
         let mut parts = rule_str.split(' ');
 
         // rule direction
-        let direction_str = parts.next().expect("Invalid format for firewall rule: not enough arguments");
+        let direction_str = parts.next().expect(&FwError::NotEnoughArguments.to_string());
         let direction = match direction_str {
             "IN" => PacketDirection::In,
             "OUT" => PacketDirection::Out,
-            _ => panic!("Invalid format for firewall rule: incorrect direction"),
+            _ => panic!(FwError::InvalidDirection.to_string()),
         };
 
         // rule action
-        let action_str = parts.next().expect("Invalid format for firewall rule: not enough arguments");
+        let action_str = parts.next().expect(&FwError::NotEnoughArguments.to_string());
         let action = match action_str {
             "ACCEPT" => FwAction::Accept,
             "DENY" => FwAction::Deny,
             "REJECT" => FwAction::Reject,
-            _ => panic!("Invalid format for firewall rule: incorrect action"),
+            _ => panic!(FwError::InvalidAction.to_string()),
         };
 
         // rule options
@@ -229,7 +264,7 @@ impl FwRule {
             if option.is_some() {
                 let firewall_option = FwOption::new(
                     option.unwrap(),
-                    parts.next().expect("Invalid format for firewall rule: each option must have a value"),
+                    parts.next().expect(&FwError::EmptyOption.to_string()),
                 );
                 options.push(firewall_option);
             } else {
@@ -265,7 +300,7 @@ impl FwRule {
         // check there is no duplicate options
         for option in options {
             if options_map.insert(option.to_option_str(), option).is_some() {
-                panic!("Invalid format for firewall rule: duplicated option for the same rule");
+                panic!(FwError::DuplicatedOption.to_string());
             }
         }
 
@@ -275,10 +310,10 @@ impl FwRule {
         if options_map.contains_key("--icmp-type") {
             match options_map.get("--proto") {
                 None => {
-                    panic!("Invalid format for firewall rule: --icmp-type is only valid for protocol numbers 1 or 58");
+                    panic!(FwError::NotApplicableIcmpType.to_string());
                 }
                 Some(FwOption::Proto(x)) if *x != 1 && *x != 58 => {
-                    panic!("Invalid format for firewall rule: --icmp-type is only valid for protocol numbers 1 or 58");
+                    panic!(FwError::NotApplicableIcmpType.to_string());
                 }
                 _ => {}
             }
