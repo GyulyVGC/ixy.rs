@@ -235,7 +235,7 @@ impl FwOption {
             }
             FwOption::SOURCE => Self::Source(IpCollection::new(value)),
             FwOption::SPORT => Self::Sport(PortCollection::new(value)),
-            _ => panic!(FwError::UnknownOption.to_string()),
+            _ => panic!("{}", FwError::UnknownOption.to_string()),
         }
     }
 
@@ -347,7 +347,7 @@ impl FwRule {
         // check there is no duplicate options
         for option in options {
             if options_map.insert(option.to_option_str(), option).is_some() {
-                panic!(FwError::DuplicatedOption.to_string());
+                panic!(&FwError::DuplicatedOption.to_string());
             }
         }
 
@@ -357,10 +357,10 @@ impl FwRule {
         if options_map.contains_key(FwOption::ICMPTYPE) {
             match options_map.get(FwOption::PROTO) {
                 None => {
-                    panic!(FwError::NotApplicableIcmpType.to_string());
+                    panic!("{}", FwError::NotApplicableIcmpType.to_string());
                 }
                 Some(FwOption::Proto(x)) if *x != 1 && *x != 58 => {
-                    panic!(FwError::NotApplicableIcmpType.to_string());
+                    panic!("{}", FwError::NotApplicableIcmpType.to_string());
                 }
                 _ => {}
             }
