@@ -347,7 +347,7 @@ impl FwRule {
         // check there is no duplicate options
         for option in options {
             if options_map.insert(option.to_option_str(), option).is_some() {
-                panic!(&FwError::DuplicatedOption.to_string());
+                panic!("{}", FwError::DuplicatedOption.to_string());
             }
         }
 
