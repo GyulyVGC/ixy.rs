@@ -3,7 +3,7 @@ use etherparse::PacketHeaders;
 use std::collections::HashMap;
 use std::fmt::{Display, Formatter};
 use std::net::IpAddr;
-use std::ops::{RangeInclusive};
+use std::ops::RangeInclusive;
 use std::str::FromStr;
 use std::u16;
 
@@ -97,7 +97,9 @@ impl Display for FwError {
             FwError::NotEnoughArguments => "not enough arguments supplied for rule",
             FwError::EmptyOption => "each option must have a value",
             FwError::DuplicatedOption => "duplicated option for the same rule",
-            FwError::NotApplicableIcmpType => "--icmp-type is only valid for protocol numbers 1 or 58",
+            FwError::NotApplicableIcmpType => {
+                "--icmp-type is only valid for protocol numbers 1 or 58"
+            }
         };
 
         write!(f, "Firewall error - {}", err_info)
@@ -297,11 +299,16 @@ impl FwRule {
         let mut parts = rule_str.split(' ');
 
         // rule direction
-        let direction_str = parts.next().expect(&FwError::NotEnoughArguments.to_string());
-        let direction = PacketDirection::from_str(direction_str).expect(&FwError::InvalidDirection.to_string());
+        let direction_str = parts
+            .next()
+            .expect(&FwError::NotEnoughArguments.to_string());
+        let direction =
+            PacketDirection::from_str(direction_str).expect(&FwError::InvalidDirection.to_string());
 
         // rule action
-        let action_str = parts.next().expect(&FwError::NotEnoughArguments.to_string());
+        let action_str = parts
+            .next()
+            .expect(&FwError::NotEnoughArguments.to_string());
         let action = FwAction::from_str(action_str).expect(&FwError::InvalidAction.to_string());
 
         // rule options
@@ -365,5 +372,104 @@ impl FwRule {
                 _ => {}
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::dev::firewall::{IpCollection, PortCollection};
+    use std::net::IpAddr;
+    use std::ops::RangeInclusive;
+    use std::str::FromStr;
+
+    #[test]
+    fn test_new_port_collections() {
+        assert_eq!(
+            PortCollection::new("1,2,3,4,999"),
+            PortCollection {
+                ports: vec![1, 2, 3, 4, 999],
+                ranges: vec![]
+            }
+        );
+        assert_eq!(
+            PortCollection::new("1,2,3,4,900:999"),
+            PortCollection {
+                ports: vec![1, 2, 3, 4],
+                ranges: vec![900..=999]
+            }
+        );
+        assert_eq!(
+            PortCollection::new("1:999"),
+            PortCollection {
+                ports: vec![],
+                ranges: vec![1..=999]
+            }
+        );
+        assert_eq!(
+            PortCollection::new("1,2,10:20,3,4,999:1200"),
+            PortCollection {
+                ports: vec![1, 2, 3, 4],
+                ranges: vec![10..=20, 999..=1200]
+            }
+        );
+        assert!(std::panic::catch_unwind(|| PortCollection::new("1,2,10:20,3,4,:1200")).is_err());
+        assert!(
+            std::panic::catch_unwind(|| PortCollection::new("1,2,10:20,3,4,999-1200")).is_err()
+        );
+        assert!(
+            std::panic::catch_unwind(|| PortCollection::new("1,2,10:20,3,4,999-1200,")).is_err()
+        );
+    }
+
+    #[test]
+    fn test_new_ip_collections() {
+        assert_eq!(
+            IpCollection::new("1.1.1.1,2.2.2.2"),
+            IpCollection {
+                ips: vec![
+                    IpAddr::from_str("1.1.1.1").unwrap(),
+                    IpAddr::from_str("2.2.2.2").unwrap()
+                ],
+                ranges: vec![]
+            }
+        );
+        assert_eq!(
+            IpCollection::new("1.1.1.1,2.2.2.2,3.3.3.3-5.5.5.5,10.0.0.1-10.0.0.255,9.9.9.9"),
+            IpCollection {
+                ips: vec![
+                    IpAddr::from_str("1.1.1.1").unwrap(),
+                    IpAddr::from_str("2.2.2.2").unwrap(),
+                    IpAddr::from_str("9.9.9.9").unwrap()
+                ],
+                ranges: vec![
+                    RangeInclusive::new(
+                        IpAddr::from_str("3.3.3.3").unwrap(),
+                        IpAddr::from_str("5.5.5.5").unwrap()
+                    ),
+                    RangeInclusive::new(
+                        IpAddr::from_str("10.0.0.1").unwrap(),
+                        IpAddr::from_str("10.0.0.255").unwrap()
+                    )
+                ]
+            }
+        );
+        assert_eq!(
+            IpCollection::new("aaaa::ffff,bbbb::1-cccc::2"),
+            IpCollection {
+                ips: vec![IpAddr::from_str("aaaa::ffff").unwrap(),],
+                ranges: vec![RangeInclusive::new(
+                    IpAddr::from_str("bbbb::1").unwrap(),
+                    IpAddr::from_str("cccc::2").unwrap()
+                )]
+            }
+        );
+        assert!(std::panic::catch_unwind(|| IpCollection::new(
+            "1.1.1.1,2.2.2.2,3.3.3.3-5.5.5.5,10.0.0.1-10.0.0.255,9.9.9"
+        ))
+        .is_err());
+        assert!(std::panic::catch_unwind(|| IpCollection::new(
+            "1.1.1.1,2.2.2.2,3.3.3.3-5.5.5.5,10.0.0.1:10.0.0.255,9.9.9.9"
+        ))
+        .is_err());
     }
 }

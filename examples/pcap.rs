@@ -7,10 +7,10 @@ use std::{env, process};
 use byteorder::{WriteBytesExt, LE};
 use colored::Colorize;
 use etherparse::PacketHeaders;
+use ixy::dev::firewall::FwRule;
 use ixy::memory::{alloc_pkt_batch, Mempool, Packet};
 use ixy::*;
 use simple_logger::SimpleLogger;
-use ixy::dev::firewall::FwRule;
 
 const BATCH_SIZE: usize = 32;
 

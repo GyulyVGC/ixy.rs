@@ -159,7 +159,8 @@ pub fn format_ipv4_address(address: [u8; 4]) -> String {
 /// # Example
 ///
 /// ```
-/// let result = ipv6_from_long_dec_to_short_hex([255,10,10,255,0,0,0,0,28,4,4,28,255,1,0,0]);
+/// use ixy::dev::sniffer::format_ipv6_address;
+/// let result = format_ipv6_address([255,10,10,255,0,0,0,0,28,4,4,28,255,1,0,0]);
 /// assert_eq!(result, "ff0a:aff::1c04:41c:ff01:0".to_string());
 /// ```
 pub fn format_ipv6_address(ipv6_long: [u8; 16]) -> String {
