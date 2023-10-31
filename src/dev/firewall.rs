@@ -201,7 +201,7 @@ impl IpCollection {
 }
 
 /// Options associated to a specific firewall rule
-#[derive(Debug)]
+#[derive(Debug, Eq, PartialEq)]
 pub enum FwOption {
     /// Destination IP addresses
     Dest(IpCollection),
