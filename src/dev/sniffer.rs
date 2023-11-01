@@ -1,13 +1,13 @@
-use crate::dev::firewall::{FwAction, FwRule, PacketDirection};
+use crate::dev::firewall::{FirewallAction, FirewallRule, FirewallDirection};
 use colored::Colorize;
 use etherparse::{IpHeader, PacketHeaders, TransportHeader};
 
 pub fn firewall_action_for_packet(
     packet: &[u8],
-    direction: PacketDirection,
-    firewall_rules: &Vec<FwRule>,
-) -> FwAction {
-    let mut action = FwAction::default();
+    direction: FirewallDirection,
+    firewall_rules: &Vec<FirewallRule>,
+) -> FirewallAction {
+    let mut action = FirewallAction::default();
     let mut current_specificity = 0;
     for rule in firewall_rules {
         if rule.matches_packet(packet, &direction) && rule.specificity() >= current_specificity {
@@ -18,7 +18,7 @@ pub fn firewall_action_for_packet(
     action
 }
 
-pub fn print_packet_info(pkt_data: &[u8], direction: PacketDirection, action: FwAction) {
+pub fn print_packet_info(pkt_data: &[u8], direction: FirewallDirection, action: FirewallAction) {
     let mut src_port = 0;
     let mut dst_port = 0;
     let mut src_mac = String::new();
@@ -26,7 +26,7 @@ pub fn print_packet_info(pkt_data: &[u8], direction: PacketDirection, action: Fw
     let mut ether_type = 0;
     let mut src_ip = String::new();
     let mut dst_ip = String::new();
-    let color = if direction.eq(&PacketDirection::Out) {
+    let color = if direction.eq(&FirewallDirection::Out) {
         "blue"
     } else {
         "purple"

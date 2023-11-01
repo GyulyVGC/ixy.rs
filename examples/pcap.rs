@@ -7,7 +7,7 @@ use std::{env, process};
 use byteorder::{WriteBytesExt, LE};
 use colored::Colorize;
 use etherparse::PacketHeaders;
-use ixy::dev::firewall::FwRule;
+use ixy::dev::firewall::FirewallRule;
 use ixy::memory::{alloc_pkt_batch, Mempool, Packet};
 use ixy::*;
 use simple_logger::SimpleLogger;
@@ -54,7 +54,7 @@ pub fn main() -> Result<(), io::Error> {
     let file = File::open("./examples/firewall.txt").unwrap();
     for line in BufReader::new(file).lines() {
         if let Ok(firewall_rule) = line {
-            firewall_rules.push(FwRule::new(&firewall_rule));
+            firewall_rules.push(FirewallRule::new(&firewall_rule));
         }
     }
     dev.set_firewall_rules(firewall_rules);

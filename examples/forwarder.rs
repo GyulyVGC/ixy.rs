@@ -8,7 +8,7 @@ use std::process;
 use std::time::Duration;
 use std::{env, thread};
 
-use ixy::dev::firewall::FwRule;
+use ixy::dev::firewall::FirewallRule;
 use ixy::dev::sniffer::{format_ipv4_address, format_ipv6_address};
 use ixy::memory::{alloc_pkt_batch, Mempool, Packet};
 use ixy::*;
@@ -68,7 +68,7 @@ fn transmit(pci_addr: String) {
     let file = File::open("./examples/firewall.txt").unwrap();
     for line in BufReader::new(file).lines() {
         if let Ok(firewall_rule) = line {
-            firewall_rules.push(FwRule::new(&firewall_rule));
+            firewall_rules.push(FirewallRule::new(&firewall_rule));
         }
     }
     dev.set_firewall_rules(firewall_rules);
@@ -146,7 +146,7 @@ fn receive(pci_addr: String) {
     let file = File::open("./examples/firewall.txt").unwrap();
     for line in BufReader::new(file).lines() {
         if let Ok(firewall_rule) = line {
-            firewall_rules.push(FwRule::new(&firewall_rule));
+            firewall_rules.push(FirewallRule::new(&firewall_rule));
         }
     }
     println!("FIREWALL RULES SET:\n{:#?}", firewall_rules);

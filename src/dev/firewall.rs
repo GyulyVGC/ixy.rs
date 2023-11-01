@@ -8,69 +8,69 @@ use std::str::FromStr;
 use std::u16;
 
 #[derive(Debug, Eq, PartialEq)]
-pub enum PacketDirection {
+pub enum FirewallDirection {
     In,
     Out,
 }
 
-impl Display for PacketDirection {
+impl Display for FirewallDirection {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         let str = match self {
-            PacketDirection::In => "IN",
-            PacketDirection::Out => "OUT",
+            FirewallDirection::In => "IN",
+            FirewallDirection::Out => "OUT",
         };
 
         write!(f, "{}", str)
     }
 }
 
-impl FromStr for PacketDirection {
-    type Err = FwError;
+impl FromStr for FirewallDirection {
+    type Err = FirewallError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s {
             "IN" => Ok(Self::In),
             "OUT" => Ok(Self::Out),
-            _ => Err(FwError::InvalidDirection),
+            _ => Err(FirewallError::InvalidDirection),
         }
     }
 }
 
 #[derive(Default, Copy, Clone, Eq, PartialEq, Debug)]
-pub enum FwAction {
+pub enum FirewallAction {
     #[default]
     Accept,
     Deny,
     Reject,
 }
 
-impl Display for FwAction {
+impl Display for FirewallAction {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         let str = match self {
-            FwAction::Accept => "ACCEPT",
-            FwAction::Deny => "DENY",
-            FwAction::Reject => "REJECT",
+            FirewallAction::Accept => "ACCEPT",
+            FirewallAction::Deny => "DENY",
+            FirewallAction::Reject => "REJECT",
         };
 
         write!(f, "{}", str)
     }
 }
 
-impl FromStr for FwAction {
-    type Err = FwError;
+impl FromStr for FirewallAction {
+    type Err = FirewallError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s {
             "ACCEPT" => Ok(Self::Accept),
             "DENY" => Ok(Self::Deny),
             "REJECT" => Ok(Self::Reject),
-            _ => Err(FwError::InvalidAction),
+            _ => Err(FirewallError::InvalidAction),
         }
     }
 }
 
 #[derive(Debug)]
-pub enum FwError {
+pub enum FirewallError {
     InvalidPorts,
     InvalidIps,
     InvalidIcmpType,
@@ -84,20 +84,20 @@ pub enum FwError {
     NotApplicableIcmpType,
 }
 
-impl Display for FwError {
+impl Display for FirewallError {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         let err_info = match self {
-            FwError::InvalidPorts => "incorrect port(s) specification",
-            FwError::InvalidIps => "incorrect IP(s) specification",
-            FwError::InvalidIcmpType => "incorrect ICMP type specification",
-            FwError::InvalidProtocol => "incorrect protocol specification",
-            FwError::InvalidDirection => "incorrect direction",
-            FwError::InvalidAction => "incorrect action",
-            FwError::UnknownOption => "the specified option doesn't exists",
-            FwError::NotEnoughArguments => "not enough arguments supplied for rule",
-            FwError::EmptyOption => "each option must have a value",
-            FwError::DuplicatedOption => "duplicated option for the same rule",
-            FwError::NotApplicableIcmpType => {
+            FirewallError::InvalidPorts => "incorrect port(s) specification",
+            FirewallError::InvalidIps => "incorrect IP(s) specification",
+            FirewallError::InvalidIcmpType => "incorrect ICMP type specification",
+            FirewallError::InvalidProtocol => "incorrect protocol specification",
+            FirewallError::InvalidDirection => "incorrect direction",
+            FirewallError::InvalidAction => "incorrect action",
+            FirewallError::UnknownOption => "the specified option doesn't exists",
+            FirewallError::NotEnoughArguments => "not enough arguments supplied for rule",
+            FirewallError::EmptyOption => "each option must have a value",
+            FirewallError::DuplicatedOption => "duplicated option for the same rule",
+            FirewallError::NotApplicableIcmpType => {
                 "--icmp-type is only valid for protocol numbers 1 or 58"
             }
         };
@@ -126,21 +126,21 @@ impl PortCollection {
                     u16::from_str(
                         subparts
                             .next()
-                            .unwrap_or_else(|| panic!("{}", FwError::InvalidPorts.to_string())),
+                            .unwrap_or_else(|| panic!("{}", FirewallError::InvalidPorts.to_string())),
                     )
-                    .unwrap_or_else(|_| panic!("{}", FwError::InvalidPorts.to_string())),
+                    .unwrap_or_else(|_| panic!("{}", FirewallError::InvalidPorts.to_string())),
                     u16::from_str(
                         subparts
                             .next()
-                            .unwrap_or_else(|| panic!("{}", FwError::InvalidPorts.to_string())),
+                            .unwrap_or_else(|| panic!("{}", FirewallError::InvalidPorts.to_string())),
                     )
-                    .unwrap_or_else(|_| panic!("{}", FwError::InvalidPorts.to_string())),
+                    .unwrap_or_else(|_| panic!("{}", FirewallError::InvalidPorts.to_string())),
                 );
                 ranges.push(range);
             } else {
                 // individual port
                 let port = u16::from_str(part)
-                    .unwrap_or_else(|_| panic!("{}", FwError::InvalidPorts.to_string()));
+                    .unwrap_or_else(|_| panic!("{}", FirewallError::InvalidPorts.to_string()));
                 ports.push(port);
             }
         }
@@ -182,21 +182,21 @@ impl IpCollection {
                     IpAddr::from_str(
                         subparts
                             .next()
-                            .unwrap_or_else(|| panic!("{}", FwError::InvalidIps.to_string())),
+                            .unwrap_or_else(|| panic!("{}", FirewallError::InvalidIps.to_string())),
                     )
-                    .unwrap_or_else(|_| panic!("{}", FwError::InvalidIps.to_string())),
+                    .unwrap_or_else(|_| panic!("{}", FirewallError::InvalidIps.to_string())),
                     IpAddr::from_str(
                         subparts
                             .next()
-                            .unwrap_or_else(|| panic!("{}", FwError::InvalidIps.to_string())),
+                            .unwrap_or_else(|| panic!("{}", FirewallError::InvalidIps.to_string())),
                     )
-                    .unwrap_or_else(|_| panic!("{}", FwError::InvalidIps.to_string())),
+                    .unwrap_or_else(|_| panic!("{}", FirewallError::InvalidIps.to_string())),
                 );
                 ranges.push(range);
             } else {
                 // individual IP
                 let ip = IpAddr::from_str(part)
-                    .unwrap_or_else(|_| panic!("{}", FwError::InvalidIps.to_string()));
+                    .unwrap_or_else(|_| panic!("{}", FirewallError::InvalidIps.to_string()));
                 ips.push(ip);
             }
         }
@@ -220,7 +220,7 @@ impl IpCollection {
 
 /// Options associated to a specific firewall rule
 #[derive(Debug, Eq, PartialEq)]
-pub enum FwOption {
+pub enum FirewallOption {
     /// Destination IP addresses
     Dest(IpCollection),
     /// Destination ports
@@ -235,7 +235,7 @@ pub enum FwOption {
     Sport(PortCollection),
 }
 
-impl FwOption {
+impl FirewallOption {
     const DEST: &'static str = "--dest";
     const DPORT: &'static str = "--dport";
     const ICMPTYPE: &'static str = "--icmp-type";
@@ -245,19 +245,19 @@ impl FwOption {
 
     pub fn new(option: &str, value: &str) -> Self {
         match option {
-            FwOption::DEST => Self::Dest(IpCollection::new(value)),
-            FwOption::DPORT => Self::Dport(PortCollection::new(value)),
-            FwOption::ICMPTYPE => Self::IcmpType(
+            FirewallOption::DEST => Self::Dest(IpCollection::new(value)),
+            FirewallOption::DPORT => Self::Dport(PortCollection::new(value)),
+            FirewallOption::ICMPTYPE => Self::IcmpType(
                 u8::from_str(value)
-                    .unwrap_or_else(|_| panic!("{}", FwError::InvalidIcmpType.to_string())),
+                    .unwrap_or_else(|_| panic!("{}", FirewallError::InvalidIcmpType.to_string())),
             ),
-            FwOption::PROTO => Self::Proto(
+            FirewallOption::PROTO => Self::Proto(
                 u8::from_str(value)
-                    .unwrap_or_else(|_| panic!("{}", FwError::InvalidProtocol.to_string())),
+                    .unwrap_or_else(|_| panic!("{}", FirewallError::InvalidProtocol.to_string())),
             ),
-            FwOption::SOURCE => Self::Source(IpCollection::new(value)),
-            FwOption::SPORT => Self::Sport(PortCollection::new(value)),
-            _ => panic!("{}", FwError::UnknownOption.to_string()),
+            FirewallOption::SOURCE => Self::Source(IpCollection::new(value)),
+            FirewallOption::SPORT => Self::Sport(PortCollection::new(value)),
+            _ => panic!("{}", FirewallError::UnknownOption.to_string()),
         }
     }
 
@@ -266,26 +266,26 @@ impl FwOption {
             let ip_header = headers.ip;
             let transport_header = headers.transport;
             match self {
-                FwOption::Dest(ip_collection) => ip_collection.contains(get_dest(ip_header)),
-                FwOption::Dport(port_collection) => {
+                FirewallOption::Dest(ip_collection) => ip_collection.contains(get_dest(ip_header)),
+                FirewallOption::Dport(port_collection) => {
                     port_collection.contains(get_dport(transport_header))
                 }
-                FwOption::IcmpType(icmp_type) => {
+                FirewallOption::IcmpType(icmp_type) => {
                     if let Some(observed_icmp) = get_icmp_type(transport_header) {
                         icmp_type.eq(&observed_icmp)
                     } else {
                         false
                     }
                 }
-                FwOption::Proto(proto) => {
+                FirewallOption::Proto(proto) => {
                     if let Some(observed_proto) = get_proto(ip_header) {
                         proto.eq(&observed_proto)
                     } else {
                         false
                     }
                 }
-                FwOption::Source(ip_collection) => ip_collection.contains(get_source(ip_header)),
-                FwOption::Sport(port_collection) => {
+                FirewallOption::Source(ip_collection) => ip_collection.contains(get_source(ip_header)),
+                FirewallOption::Sport(port_collection) => {
                     port_collection.contains(get_sport(transport_header))
                 }
             }
@@ -296,52 +296,52 @@ impl FwOption {
 
     pub fn to_option_str(&self) -> &str {
         match self {
-            FwOption::Dest(_) => FwOption::DEST,
-            FwOption::Dport(_) => FwOption::DPORT,
-            FwOption::Proto(_) => FwOption::PROTO,
-            FwOption::Source(_) => FwOption::SOURCE,
-            FwOption::Sport(_) => FwOption::SPORT,
-            FwOption::IcmpType(_) => FwOption::ICMPTYPE,
+            FirewallOption::Dest(_) => FirewallOption::DEST,
+            FirewallOption::Dport(_) => FirewallOption::DPORT,
+            FirewallOption::Proto(_) => FirewallOption::PROTO,
+            FirewallOption::Source(_) => FirewallOption::SOURCE,
+            FirewallOption::Sport(_) => FirewallOption::SPORT,
+            FirewallOption::IcmpType(_) => FirewallOption::ICMPTYPE,
         }
     }
 }
 
 /// A firewall rule
 #[derive(Debug, Eq, PartialEq)]
-pub struct FwRule {
-    pub direction: PacketDirection,
-    pub action: FwAction,
-    pub options: Vec<FwOption>,
+pub struct FirewallRule {
+    pub direction: FirewallDirection,
+    pub action: FirewallAction,
+    pub options: Vec<FirewallOption>,
 }
 
-impl FwRule {
+impl FirewallRule {
     pub fn new(rule_str: &str) -> Self {
         let mut parts = rule_str.split(' ');
 
         // rule direction
         let direction_str = parts
             .next()
-            .unwrap_or_else(|| panic!("{}", FwError::NotEnoughArguments.to_string()));
-        let direction = PacketDirection::from_str(direction_str)
-            .unwrap_or_else(|_| panic!("{}", FwError::InvalidDirection.to_string()));
+            .unwrap_or_else(|| panic!("{}", FirewallError::NotEnoughArguments.to_string()));
+        let direction = FirewallDirection::from_str(direction_str)
+            .unwrap_or_else(|_| panic!("{}", FirewallError::InvalidDirection.to_string()));
 
         // rule action
         let action_str = parts
             .next()
-            .unwrap_or_else(|| panic!("{}", FwError::NotEnoughArguments.to_string()));
-        let action = FwAction::from_str(action_str)
-            .unwrap_or_else(|_| panic!("{}", FwError::InvalidAction.to_string()));
+            .unwrap_or_else(|| panic!("{}", FirewallError::NotEnoughArguments.to_string()));
+        let action = FirewallAction::from_str(action_str)
+            .unwrap_or_else(|_| panic!("{}", FirewallError::InvalidAction.to_string()));
 
         // rule options
         let mut options = Vec::new();
         loop {
             let option = parts.next();
             if option.is_some() {
-                let firewall_option = FwOption::new(
+                let firewall_option = FirewallOption::new(
                     option.unwrap(),
                     parts
                         .next()
-                        .unwrap_or_else(|| panic!("{}", FwError::EmptyOption.to_string())),
+                        .unwrap_or_else(|| panic!("{}", FirewallError::EmptyOption.to_string())),
                 );
                 options.push(firewall_option);
             } else {
@@ -349,7 +349,7 @@ impl FwRule {
             }
         }
 
-        FwRule::validate_options(&options);
+        FirewallRule::validate_options(&options);
 
         Self {
             direction,
@@ -358,7 +358,7 @@ impl FwRule {
         }
     }
 
-    pub fn matches_packet(&self, packet: &[u8], direction: &PacketDirection) -> bool {
+    pub fn matches_packet(&self, packet: &[u8], direction: &FirewallDirection) -> bool {
         for option in &self.options {
             if !option.matches_packet(packet) {
                 return false;
@@ -371,26 +371,26 @@ impl FwRule {
         self.options.len()
     }
 
-    pub fn validate_options(options: &Vec<FwOption>) {
+    pub fn validate_options(options: &Vec<FirewallOption>) {
         let mut options_map = HashMap::new();
 
         // check there is no duplicate options
         for option in options {
             if options_map.insert(option.to_option_str(), option).is_some() {
-                panic!("{}", FwError::DuplicatedOption.to_string());
+                panic!("{}", FirewallError::DuplicatedOption.to_string());
             }
         }
 
         // if --icmp-type option is present, --proto 1 || --proto 58 must also be present
         // from Proxmox VE documentation: --icmp-type is only valid if --proto equals icmp or ipv6-icmp
         // icmp = 1, ipv6-icmp = 58 (<https://www.iana.org/assignments/protocol-numbers/protocol-numbers.xhtml>)
-        if options_map.contains_key(FwOption::ICMPTYPE) {
-            match options_map.get(FwOption::PROTO) {
+        if options_map.contains_key(FirewallOption::ICMPTYPE) {
+            match options_map.get(FirewallOption::PROTO) {
                 None => {
-                    panic!("{}", FwError::NotApplicableIcmpType.to_string());
+                    panic!("{}", FirewallError::NotApplicableIcmpType.to_string());
                 }
-                Some(FwOption::Proto(x)) if *x != 1 && *x != 58 => {
-                    panic!("{}", FwError::NotApplicableIcmpType.to_string());
+                Some(FirewallOption::Proto(x)) if *x != 1 && *x != 58 => {
+                    panic!("{}", FirewallError::NotApplicableIcmpType.to_string());
                 }
                 _ => {}
             }
@@ -400,9 +400,9 @@ impl FwRule {
 
 #[cfg(test)]
 mod tests {
-    use crate::dev::firewall::{FwAction, FwOption, IpCollection, PacketDirection, PortCollection};
+    use crate::dev::firewall::{FirewallAction, FirewallOption, IpCollection, FirewallDirection, PortCollection};
     use crate::dev::raw_packets::{ARP_PACKET, ICMP_PACKET, TCP_PACKET};
-    use crate::FwRule;
+    use crate::FirewallRule;
     use std::net::IpAddr;
     use std::ops::RangeInclusive;
     use std::str::FromStr;
@@ -540,122 +540,122 @@ mod tests {
     #[test]
     fn test_new_firewall_options() {
         assert_eq!(
-            FwOption::new(
+            FirewallOption::new(
                 "--dest",
                 "1.1.1.1,2.2.2.2,3.3.3.3-5.5.5.5,10.0.0.1-10.0.0.255,9.9.9.9"
             ),
-            FwOption::Dest(IpCollection::new(
+            FirewallOption::Dest(IpCollection::new(
                 "1.1.1.1,2.2.2.2,3.3.3.3-5.5.5.5,10.0.0.1-10.0.0.255,9.9.9.9"
             ))
         );
 
         assert_eq!(
-            FwOption::new("--dport", "1,2,10:20,3,4,999:1200"),
-            FwOption::Dport(PortCollection::new("1,2,10:20,3,4,999:1200"))
+            FirewallOption::new("--dport", "1,2,10:20,3,4,999:1200"),
+            FirewallOption::Dport(PortCollection::new("1,2,10:20,3,4,999:1200"))
         );
 
-        assert_eq!(FwOption::new("--icmp-type", "8"), FwOption::IcmpType(8));
+        assert_eq!(FirewallOption::new("--icmp-type", "8"), FirewallOption::IcmpType(8));
 
-        assert_eq!(FwOption::new("--proto", "1"), FwOption::Proto(1));
+        assert_eq!(FirewallOption::new("--proto", "1"), FirewallOption::Proto(1));
 
         assert_eq!(
-            FwOption::new(
+            FirewallOption::new(
                 "--source",
                 "1.1.1.1,2.2.2.2,3.3.3.3-5.5.5.5,10.0.0.1-10.0.0.255,9.9.9.9"
             ),
-            FwOption::Source(IpCollection::new(
+            FirewallOption::Source(IpCollection::new(
                 "1.1.1.1,2.2.2.2,3.3.3.3-5.5.5.5,10.0.0.1-10.0.0.255,9.9.9.9"
             ))
         );
 
         assert_eq!(
-            FwOption::new("--sport", "1,2,10:20,3,4,999:1200"),
-            FwOption::Sport(PortCollection::new("1,2,10:20,3,4,999:1200"))
+            FirewallOption::new("--sport", "1,2,10:20,3,4,999:1200"),
+            FirewallOption::Sport(PortCollection::new("1,2,10:20,3,4,999:1200"))
         );
 
-        assert!(std::panic::catch_unwind(|| FwOption::new("--not-exists", "8.8.8.8")).is_err());
+        assert!(std::panic::catch_unwind(|| FirewallOption::new("--not-exists", "8.8.8.8")).is_err());
     }
 
     #[test]
     fn test_new_firewall_rules() {
         assert_eq!(
-            FwRule::new("OUT ACCEPT --source 8.8.8.8,7.7.7.7 --dport 900:1000,1,2,3"),
-            FwRule {
-                direction: PacketDirection::Out,
-                action: FwAction::Accept,
+            FirewallRule::new("OUT ACCEPT --source 8.8.8.8,7.7.7.7 --dport 900:1000,1,2,3"),
+            FirewallRule {
+                direction: FirewallDirection::Out,
+                action: FirewallAction::Accept,
                 options: vec![
-                    FwOption::Source(IpCollection::new("8.8.8.8,7.7.7.7")),
-                    FwOption::Dport(PortCollection::new("900:1000,1,2,3"))
+                    FirewallOption::Source(IpCollection::new("8.8.8.8,7.7.7.7")),
+                    FirewallOption::Dport(PortCollection::new("900:1000,1,2,3"))
                 ]
             }
         );
 
         assert_eq!(
-            FwRule::new("OUT REJECT --source 8.8.8.8,7.7.7.7 --dport 900:1000,1,2,3 --icmp-type 8 --proto 1"),
-            FwRule {
-                direction: PacketDirection::Out,
-                action: FwAction::Reject,
+            FirewallRule::new("OUT REJECT --source 8.8.8.8,7.7.7.7 --dport 900:1000,1,2,3 --icmp-type 8 --proto 1"),
+            FirewallRule {
+                direction: FirewallDirection::Out,
+                action: FirewallAction::Reject,
                 options: vec![
-                    FwOption::Source(IpCollection::new("8.8.8.8,7.7.7.7")),
-                    FwOption::Dport(PortCollection::new("900:1000,1,2,3")),
-                    FwOption::IcmpType(8),
-                    FwOption::Proto(1)
+                    FirewallOption::Source(IpCollection::new("8.8.8.8,7.7.7.7")),
+                    FirewallOption::Dport(PortCollection::new("900:1000,1,2,3")),
+                    FirewallOption::IcmpType(8),
+                    FirewallOption::Proto(1)
                 ]
             }
         );
 
         assert_eq!(
-            FwRule::new(
+            FirewallRule::new(
                 "IN DENY --dest 8.8.8.8,7.7.7.7 --sport 900:1000,1,2,3 --icmp-type 1 --proto 58"
             ),
-            FwRule {
-                direction: PacketDirection::In,
-                action: FwAction::Deny,
+            FirewallRule {
+                direction: FirewallDirection::In,
+                action: FirewallAction::Deny,
                 options: vec![
-                    FwOption::Dest(IpCollection::new("8.8.8.8,7.7.7.7")),
-                    FwOption::Sport(PortCollection::new("900:1000,1,2,3")),
-                    FwOption::IcmpType(1),
-                    FwOption::Proto(58)
+                    FirewallOption::Dest(IpCollection::new("8.8.8.8,7.7.7.7")),
+                    FirewallOption::Sport(PortCollection::new("900:1000,1,2,3")),
+                    FirewallOption::IcmpType(1),
+                    FirewallOption::Proto(58)
                 ]
             }
         );
 
-        assert!(std::panic::catch_unwind(|| FwRule::new(
+        assert!(std::panic::catch_unwind(|| FirewallRule::new(
             "ACCEPT OUT --source 8.8.8.8,7.7.7.7 --dport 900:1000,1,2,3"
         ))
         .is_err());
 
-        assert!(std::panic::catch_unwind(|| FwRule::new(
+        assert!(std::panic::catch_unwind(|| FirewallRule::new(
             "OUT ACCEPT --source 8.8.8.8,7.7.7.7 --dport"
         ))
         .is_err());
 
-        assert!(std::panic::catch_unwind(|| FwRule::new(
+        assert!(std::panic::catch_unwind(|| FirewallRule::new(
             "OUT ACCEPT --dport 8 --source 8.8.8.8,7.7.7.7 --dport 900:1000,1,2,3"
         ))
         .is_err());
 
-        assert!(std::panic::catch_unwind(|| FwRule::new(
+        assert!(std::panic::catch_unwind(|| FirewallRule::new(
             "OUT ACCEPT --source 8.8.8.8,7.7.7.7 --dport 900:1000,1,2,3.3.3.3"
         ))
         .is_err());
 
-        assert!(std::panic::catch_unwind(|| FwRule::new(
+        assert!(std::panic::catch_unwind(|| FirewallRule::new(
             "OUT ACCEPT --source 8.8.8.8,7.7.7.7 --dport 900:1000,1,2,3 --icmp-type 8"
         ))
         .is_err());
 
-        assert!(std::panic::catch_unwind(|| FwRule::new(
+        assert!(std::panic::catch_unwind(|| FirewallRule::new(
             "OUT ACCEPT --source 8.8.8.8,7.7.7.7 --dport 900:1000,1,2,3 --icmp-type 8 --proto 57"
         ))
         .is_err());
 
-        assert!(std::panic::catch_unwind(|| FwRule::new(
+        assert!(std::panic::catch_unwind(|| FirewallRule::new(
             "UP ACCEPT --source 8.8.8.8,7.7.7.7 --dport 900:1000,1,2,3"
         ))
         .is_err());
 
-        assert!(std::panic::catch_unwind(|| FwRule::new(
+        assert!(std::panic::catch_unwind(|| FirewallRule::new(
             "OUT PUTAWAY --source 8.8.8.8,7.7.7.7 --dport 900:1000,1,2,3"
         ))
         .is_err());
@@ -663,20 +663,20 @@ mod tests {
 
     #[test]
     fn test_options_match_packets() {
-        let dest_opt = FwOption::new("--dest", "192.168.200.21,8.8.8.8,2.1.1.2");
-        let range_dest_opt = FwOption::new("--dest", "192.168.200.0-192.168.200.255,8.8.8.8");
-        let range_dest_opt_miss = FwOption::new("--dest", "192.168.200.0-192.168.200.20,8.8.8.8");
-        let source_opt = FwOption::new("--source", "192.168.200.0-192.168.200.255,2.1.1.2");
-        let dport_opt = FwOption::new("--dport", "2000");
-        let range_dport_opt = FwOption::new("--dport", "6700:6750");
-        let sport_opt_wrong = FwOption::new("--sport", "2000");
-        let sport_opt_miss = FwOption::new("--sport", "6712");
-        let range_sport_opt = FwOption::new("--sport", "6711:6750");
-        let range_sport_opt_miss = FwOption::new("--sport", "6712:6750");
-        let icmp_type_opt = FwOption::new("--icmp-type", "8");
-        let wrong_icmp_type_opt = FwOption::new("--icmp-type", "7");
-        let tcp_proto_opt = FwOption::new("--proto", "6");
-        let icmp_proto_opt = FwOption::new("--proto", "1");
+        let dest_opt = FirewallOption::new("--dest", "192.168.200.21,8.8.8.8,2.1.1.2");
+        let range_dest_opt = FirewallOption::new("--dest", "192.168.200.0-192.168.200.255,8.8.8.8");
+        let range_dest_opt_miss = FirewallOption::new("--dest", "192.168.200.0-192.168.200.20,8.8.8.8");
+        let source_opt = FirewallOption::new("--source", "192.168.200.0-192.168.200.255,2.1.1.2");
+        let dport_opt = FirewallOption::new("--dport", "2000");
+        let range_dport_opt = FirewallOption::new("--dport", "6700:6750");
+        let sport_opt_wrong = FirewallOption::new("--sport", "2000");
+        let sport_opt_miss = FirewallOption::new("--sport", "6712");
+        let range_sport_opt = FirewallOption::new("--sport", "6711:6750");
+        let range_sport_opt_miss = FirewallOption::new("--sport", "6712:6750");
+        let icmp_type_opt = FirewallOption::new("--icmp-type", "8");
+        let wrong_icmp_type_opt = FirewallOption::new("--icmp-type", "7");
+        let tcp_proto_opt = FirewallOption::new("--proto", "6");
+        let icmp_proto_opt = FirewallOption::new("--proto", "1");
 
         // tcp packet
         assert!(dest_opt.matches_packet(&TCP_PACKET));
@@ -723,72 +723,72 @@ mod tests {
 
     #[test]
     fn test_rules_match_packets() {
-        let rule_1 = FwRule::new("OUT DENY");
-        assert!(rule_1.matches_packet(&TCP_PACKET, &PacketDirection::Out));
-        assert!(!rule_1.matches_packet(&TCP_PACKET, &PacketDirection::In));
-        assert!(rule_1.matches_packet(&ICMP_PACKET, &PacketDirection::Out));
-        assert!(!rule_1.matches_packet(&ICMP_PACKET, &PacketDirection::In));
-        let rule_2 = FwRule::new("IN DENY");
-        assert!(!rule_2.matches_packet(&TCP_PACKET, &PacketDirection::Out));
-        assert!(rule_2.matches_packet(&TCP_PACKET, &PacketDirection::In));
-        assert!(!rule_2.matches_packet(&ICMP_PACKET, &PacketDirection::Out));
-        assert!(rule_2.matches_packet(&ICMP_PACKET, &PacketDirection::In));
-        let rule_3_ok_out = FwRule::new("OUT REJECT --source 192.168.200.135 --dport 1999:2001");
-        assert!(rule_3_ok_out.matches_packet(&TCP_PACKET, &PacketDirection::Out));
-        assert!(!rule_3_ok_out.matches_packet(&TCP_PACKET, &PacketDirection::In));
-        assert!(!rule_3_ok_out.matches_packet(&ICMP_PACKET, &PacketDirection::Out));
-        assert!(!rule_3_ok_out.matches_packet(&ICMP_PACKET, &PacketDirection::In));
-        let rule_4_ok_in = FwRule::new("IN REJECT --source 192.168.200.135 --dport 1999:2001");
-        assert!(!rule_4_ok_in.matches_packet(&TCP_PACKET, &PacketDirection::Out));
-        assert!(rule_4_ok_in.matches_packet(&TCP_PACKET, &PacketDirection::In));
-        assert!(!rule_4_ok_in.matches_packet(&ICMP_PACKET, &PacketDirection::Out));
-        assert!(!rule_4_ok_in.matches_packet(&ICMP_PACKET, &PacketDirection::In));
+        let rule_1 = FirewallRule::new("OUT DENY");
+        assert!(rule_1.matches_packet(&TCP_PACKET, &FirewallDirection::Out));
+        assert!(!rule_1.matches_packet(&TCP_PACKET, &FirewallDirection::In));
+        assert!(rule_1.matches_packet(&ICMP_PACKET, &FirewallDirection::Out));
+        assert!(!rule_1.matches_packet(&ICMP_PACKET, &FirewallDirection::In));
+        let rule_2 = FirewallRule::new("IN DENY");
+        assert!(!rule_2.matches_packet(&TCP_PACKET, &FirewallDirection::Out));
+        assert!(rule_2.matches_packet(&TCP_PACKET, &FirewallDirection::In));
+        assert!(!rule_2.matches_packet(&ICMP_PACKET, &FirewallDirection::Out));
+        assert!(rule_2.matches_packet(&ICMP_PACKET, &FirewallDirection::In));
+        let rule_3_ok_out = FirewallRule::new("OUT REJECT --source 192.168.200.135 --dport 1999:2001");
+        assert!(rule_3_ok_out.matches_packet(&TCP_PACKET, &FirewallDirection::Out));
+        assert!(!rule_3_ok_out.matches_packet(&TCP_PACKET, &FirewallDirection::In));
+        assert!(!rule_3_ok_out.matches_packet(&ICMP_PACKET, &FirewallDirection::Out));
+        assert!(!rule_3_ok_out.matches_packet(&ICMP_PACKET, &FirewallDirection::In));
+        let rule_4_ok_in = FirewallRule::new("IN REJECT --source 192.168.200.135 --dport 1999:2001");
+        assert!(!rule_4_ok_in.matches_packet(&TCP_PACKET, &FirewallDirection::Out));
+        assert!(rule_4_ok_in.matches_packet(&TCP_PACKET, &FirewallDirection::In));
+        assert!(!rule_4_ok_in.matches_packet(&ICMP_PACKET, &FirewallDirection::Out));
+        assert!(!rule_4_ok_in.matches_packet(&ICMP_PACKET, &FirewallDirection::In));
         let rule_5_ok_out =
-            FwRule::new("OUT ACCEPT --source 192.168.200.135 --dport 1999:2001 --sport 6711");
-        assert!(rule_5_ok_out.matches_packet(&TCP_PACKET, &PacketDirection::Out));
-        assert!(!rule_5_ok_out.matches_packet(&TCP_PACKET, &PacketDirection::In));
-        assert!(!rule_5_ok_out.matches_packet(&ICMP_PACKET, &PacketDirection::Out));
-        assert!(!rule_5_ok_out.matches_packet(&ICMP_PACKET, &PacketDirection::In));
+            FirewallRule::new("OUT ACCEPT --source 192.168.200.135 --dport 1999:2001 --sport 6711");
+        assert!(rule_5_ok_out.matches_packet(&TCP_PACKET, &FirewallDirection::Out));
+        assert!(!rule_5_ok_out.matches_packet(&TCP_PACKET, &FirewallDirection::In));
+        assert!(!rule_5_ok_out.matches_packet(&ICMP_PACKET, &FirewallDirection::Out));
+        assert!(!rule_5_ok_out.matches_packet(&ICMP_PACKET, &FirewallDirection::In));
         let rule_6_ko =
-            FwRule::new("OUT REJECT --source 192.168.200.135 --dport 1999:2001 --sport 6710");
-        assert!(!rule_6_ko.matches_packet(&TCP_PACKET, &PacketDirection::Out));
-        assert!(!rule_6_ko.matches_packet(&TCP_PACKET, &PacketDirection::In));
-        assert!(!rule_6_ko.matches_packet(&ICMP_PACKET, &PacketDirection::Out));
-        assert!(!rule_6_ko.matches_packet(&ICMP_PACKET, &PacketDirection::In));
-        let rule_7_ok_out = FwRule::new("OUT REJECT --source 192.168.200.135 --dport 1999:2001 --sport 6711 --dest 192.168.200.10-192.168.200.21");
-        assert!(rule_7_ok_out.matches_packet(&TCP_PACKET, &PacketDirection::Out));
-        assert!(!rule_7_ok_out.matches_packet(&TCP_PACKET, &PacketDirection::In));
-        assert!(!rule_7_ok_out.matches_packet(&ICMP_PACKET, &PacketDirection::Out));
-        assert!(!rule_7_ok_out.matches_packet(&ICMP_PACKET, &PacketDirection::In));
-        let rule_8_ko = FwRule::new("OUT REJECT --source 192.168.200.135 --dport 1999:2001 --sport 6711 --dest 192.168.200.10-192.168.200.20");
-        assert!(!rule_8_ko.matches_packet(&TCP_PACKET, &PacketDirection::Out));
-        assert!(!rule_8_ko.matches_packet(&TCP_PACKET, &PacketDirection::In));
-        assert!(!rule_8_ko.matches_packet(&ICMP_PACKET, &PacketDirection::Out));
-        assert!(!rule_8_ko.matches_packet(&ICMP_PACKET, &PacketDirection::In));
-        let rule_9_ok_in = FwRule::new("IN ACCEPT --proto 6");
-        assert!(!rule_9_ok_in.matches_packet(&TCP_PACKET, &PacketDirection::Out));
-        assert!(rule_9_ok_in.matches_packet(&TCP_PACKET, &PacketDirection::In));
-        assert!(!rule_9_ok_in.matches_packet(&ICMP_PACKET, &PacketDirection::Out));
-        assert!(!rule_9_ok_in.matches_packet(&ICMP_PACKET, &PacketDirection::In));
-        let rule_10_ko = FwRule::new("IN ACCEPT --proto 58");
-        assert!(!rule_10_ko.matches_packet(&TCP_PACKET, &PacketDirection::Out));
-        assert!(!rule_10_ko.matches_packet(&TCP_PACKET, &PacketDirection::In));
-        assert!(!rule_10_ko.matches_packet(&ICMP_PACKET, &PacketDirection::Out));
-        assert!(!rule_10_ko.matches_packet(&ICMP_PACKET, &PacketDirection::In));
-        let rule_11_ko = FwRule::new("IN ACCEPT --proto 1 --icmp-type 8");
-        assert!(!rule_11_ko.matches_packet(&TCP_PACKET, &PacketDirection::Out));
-        assert!(!rule_11_ko.matches_packet(&TCP_PACKET, &PacketDirection::In));
-        assert!(!rule_11_ko.matches_packet(&ICMP_PACKET, &PacketDirection::Out));
-        assert!(rule_11_ko.matches_packet(&ICMP_PACKET, &PacketDirection::In));
-        let rule_12_ko = FwRule::new("OUT DENY --proto 1 --icmp-type 7");
-        assert!(!rule_12_ko.matches_packet(&TCP_PACKET, &PacketDirection::Out));
-        assert!(!rule_12_ko.matches_packet(&TCP_PACKET, &PacketDirection::In));
-        assert!(!rule_12_ko.matches_packet(&ICMP_PACKET, &PacketDirection::Out));
-        assert!(!rule_12_ko.matches_packet(&ICMP_PACKET, &PacketDirection::In));
-        let rule_13_ko = FwRule::new("OUT DENY --proto 1 --icmp-type 8");
-        assert!(!rule_13_ko.matches_packet(&TCP_PACKET, &PacketDirection::Out));
-        assert!(!rule_13_ko.matches_packet(&TCP_PACKET, &PacketDirection::In));
-        assert!(rule_13_ko.matches_packet(&ICMP_PACKET, &PacketDirection::Out));
-        assert!(!rule_13_ko.matches_packet(&ICMP_PACKET, &PacketDirection::In));
+            FirewallRule::new("OUT REJECT --source 192.168.200.135 --dport 1999:2001 --sport 6710");
+        assert!(!rule_6_ko.matches_packet(&TCP_PACKET, &FirewallDirection::Out));
+        assert!(!rule_6_ko.matches_packet(&TCP_PACKET, &FirewallDirection::In));
+        assert!(!rule_6_ko.matches_packet(&ICMP_PACKET, &FirewallDirection::Out));
+        assert!(!rule_6_ko.matches_packet(&ICMP_PACKET, &FirewallDirection::In));
+        let rule_7_ok_out = FirewallRule::new("OUT REJECT --source 192.168.200.135 --dport 1999:2001 --sport 6711 --dest 192.168.200.10-192.168.200.21");
+        assert!(rule_7_ok_out.matches_packet(&TCP_PACKET, &FirewallDirection::Out));
+        assert!(!rule_7_ok_out.matches_packet(&TCP_PACKET, &FirewallDirection::In));
+        assert!(!rule_7_ok_out.matches_packet(&ICMP_PACKET, &FirewallDirection::Out));
+        assert!(!rule_7_ok_out.matches_packet(&ICMP_PACKET, &FirewallDirection::In));
+        let rule_8_ko = FirewallRule::new("OUT REJECT --source 192.168.200.135 --dport 1999:2001 --sport 6711 --dest 192.168.200.10-192.168.200.20");
+        assert!(!rule_8_ko.matches_packet(&TCP_PACKET, &FirewallDirection::Out));
+        assert!(!rule_8_ko.matches_packet(&TCP_PACKET, &FirewallDirection::In));
+        assert!(!rule_8_ko.matches_packet(&ICMP_PACKET, &FirewallDirection::Out));
+        assert!(!rule_8_ko.matches_packet(&ICMP_PACKET, &FirewallDirection::In));
+        let rule_9_ok_in = FirewallRule::new("IN ACCEPT --proto 6");
+        assert!(!rule_9_ok_in.matches_packet(&TCP_PACKET, &FirewallDirection::Out));
+        assert!(rule_9_ok_in.matches_packet(&TCP_PACKET, &FirewallDirection::In));
+        assert!(!rule_9_ok_in.matches_packet(&ICMP_PACKET, &FirewallDirection::Out));
+        assert!(!rule_9_ok_in.matches_packet(&ICMP_PACKET, &FirewallDirection::In));
+        let rule_10_ko = FirewallRule::new("IN ACCEPT --proto 58");
+        assert!(!rule_10_ko.matches_packet(&TCP_PACKET, &FirewallDirection::Out));
+        assert!(!rule_10_ko.matches_packet(&TCP_PACKET, &FirewallDirection::In));
+        assert!(!rule_10_ko.matches_packet(&ICMP_PACKET, &FirewallDirection::Out));
+        assert!(!rule_10_ko.matches_packet(&ICMP_PACKET, &FirewallDirection::In));
+        let rule_11_ko = FirewallRule::new("IN ACCEPT --proto 1 --icmp-type 8");
+        assert!(!rule_11_ko.matches_packet(&TCP_PACKET, &FirewallDirection::Out));
+        assert!(!rule_11_ko.matches_packet(&TCP_PACKET, &FirewallDirection::In));
+        assert!(!rule_11_ko.matches_packet(&ICMP_PACKET, &FirewallDirection::Out));
+        assert!(rule_11_ko.matches_packet(&ICMP_PACKET, &FirewallDirection::In));
+        let rule_12_ko = FirewallRule::new("OUT DENY --proto 1 --icmp-type 7");
+        assert!(!rule_12_ko.matches_packet(&TCP_PACKET, &FirewallDirection::Out));
+        assert!(!rule_12_ko.matches_packet(&TCP_PACKET, &FirewallDirection::In));
+        assert!(!rule_12_ko.matches_packet(&ICMP_PACKET, &FirewallDirection::Out));
+        assert!(!rule_12_ko.matches_packet(&ICMP_PACKET, &FirewallDirection::In));
+        let rule_13_ko = FirewallRule::new("OUT DENY --proto 1 --icmp-type 8");
+        assert!(!rule_13_ko.matches_packet(&TCP_PACKET, &FirewallDirection::Out));
+        assert!(!rule_13_ko.matches_packet(&TCP_PACKET, &FirewallDirection::In));
+        assert!(rule_13_ko.matches_packet(&ICMP_PACKET, &FirewallDirection::Out));
+        assert!(!rule_13_ko.matches_packet(&ICMP_PACKET, &FirewallDirection::In));
     }
 }

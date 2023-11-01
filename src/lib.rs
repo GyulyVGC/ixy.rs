@@ -29,7 +29,7 @@ use self::memory::*;
 use self::pci::*;
 use self::virtio::VirtioDevice;
 
-use crate::dev::firewall::FwRule;
+use crate::dev::firewall::FirewallRule;
 use std::collections::VecDeque;
 use std::error::Error;
 use std::os::unix::io::RawFd;
@@ -139,7 +139,7 @@ pub trait IxyDevice {
         }
     }
 
-    fn set_firewall_rules(&mut self, _firewall_rules: Vec<FwRule>) {}
+    fn set_firewall_rules(&mut self, _firewall_rules: Vec<FirewallRule>) {}
 }
 
 /// Holds network card stats about sent and received packets.
@@ -294,7 +294,7 @@ impl IxyDevice for Box<dyn IxyDevice> {
         (**self).get_link_speed()
     }
 
-    fn set_firewall_rules(&mut self, firewall_rules: Vec<FwRule>) {
+    fn set_firewall_rules(&mut self, firewall_rules: Vec<FirewallRule>) {
         (**self).set_firewall_rules(firewall_rules)
     }
 }
