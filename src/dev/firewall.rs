@@ -405,6 +405,7 @@ mod tests {
     use std::net::IpAddr;
     use std::ops::RangeInclusive;
     use std::str::FromStr;
+    use crate::dev::raw_packets::TCP_PACKET;
 
     #[test]
     fn test_new_port_collections() {
@@ -658,5 +659,62 @@ mod tests {
             "OUT PUTAWAY --source 8.8.8.8,7.7.7.7 --dport 900:1000,1,2,3"
         ))
         .is_err());
+    }
+
+    fn test_options_match_packets() {
+        let dest_opt = FwOption::new("--dest", "192.168.200.21,8.8.8.8");
+        let range_dest_opt = FwOption::new("--dest", "192.168.200.0-192.168.200.255,8.8.8.8");
+        let range_dest_opt_miss = FwOption::new("--dest", "192.168.200.0-192.168.200.20,8.8.8.8");
+        let source_opt = FwOption::new("--dest", "192.168.200.0-192.168.200.255,2.1.1.2");
+        let dport_opt = FwOption::new("--dport", "2000");
+        let range_dport_opt = FwOption::new("--dport", "6700:6750");
+        let sport_opt_miss = FwOption::new("--sport", "6712");
+        let range_sport_opt = FwOption::new("--sport", "6711:6750");
+        let range_sport_opt_miss = FwOption::new("--sport", "6712:6750");
+        let icmp_type_opt = FwOption::new("--icmp-type", "8");
+        let wrong_icmp_type_opt = FwOption::new("--icmp-type", "7");
+        let tcp_proto_opt = FwOption::new("--proto", "6");
+        let icmp_proto_opt = FwOption::new("--proto", "1");
+
+        // tcp packet
+        assert!(dest_opt.matches_packet(&TCP_PACKET));
+        assert!(range_dest_opt.matches_packet(&TCP_PACKET));
+        assert!(!range_dest_opt_miss.matches_packet(&TCP_PACKET));
+        assert!(source_opt.matches_packet(&TCP_PACKET));
+        assert!(dport_opt.matches_packet(&TCP_PACKET));
+        assert!(!range_dport_opt.matches_packet(&TCP_PACKET));
+        assert!(!sport_opt_miss.matches_packet(&TCP_PACKET));
+        assert!(range_sport_opt.matches_packet(&TCP_PACKET));
+        assert!(!range_sport_opt_miss.matches_packet(&TCP_PACKET));
+        assert!(!icmp_type_opt.matches_packet(&TCP_PACKET));
+        assert!(!wrong_icmp_type_opt.matches_packet(&TCP_PACKET));
+        assert!(tcp_proto_opt.matches_packet(&TCP_PACKET));
+        assert!(!icmp_proto_opt.matches_packet(&TCP_PACKET));
+
+        // icmp packet
+        assert!(!dest_opt.matches_packet(&TCP_PACKET));
+        assert!(!range_dest_opt.matches_packet(&TCP_PACKET));
+        assert!(!range_dest_opt_miss.matches_packet(&TCP_PACKET));
+        assert!(source_opt.matches_packet(&TCP_PACKET));
+        assert!(!dport_opt.matches_packet(&TCP_PACKET));
+        assert!(!range_dport_opt.matches_packet(&TCP_PACKET));
+        assert!(!range_sport_opt.matches_packet(&TCP_PACKET));
+        assert!(icmp_type_opt.matches_packet(&TCP_PACKET));
+        assert!(!wrong_icmp_type_opt.matches_packet(&TCP_PACKET));
+        assert!(!tcp_proto_opt.matches_packet(&TCP_PACKET));
+        assert!(icmp_proto_opt.matches_packet(&TCP_PACKET));
+
+        // icmp packet
+        assert!(!dest_opt.matches_packet(&TCP_PACKET));
+        assert!(!range_dest_opt.matches_packet(&TCP_PACKET));
+        assert!(!range_dest_opt_miss.matches_packet(&TCP_PACKET));
+        assert!(!source_opt.matches_packet(&TCP_PACKET));
+        assert!(!dport_opt.matches_packet(&TCP_PACKET));
+        assert!(!range_dport_opt.matches_packet(&TCP_PACKET));
+        assert!(!range_sport_opt.matches_packet(&TCP_PACKET));
+        assert!(!icmp_type_opt.matches_packet(&TCP_PACKET));
+        assert!(!wrong_icmp_type_opt.matches_packet(&TCP_PACKET));
+        assert!(!tcp_proto_opt.matches_packet(&TCP_PACKET));
+        assert!(!icmp_proto_opt.matches_packet(&TCP_PACKET));
     }
 }

@@ -80,63 +80,10 @@ mod tests {
     use etherparse::PacketHeaders;
     use std::net::IpAddr;
     use std::str::FromStr;
-
-    // packets are taken from wireshark sample captures available at <https://wiki.wireshark.org/SampleCaptures>
-    #[rustfmt::skip]
-    const TCP_PACKET: [u8;66] = [
-        // ethernet header
-        0x00, 0x0c, 0x29, 0x1c, 0xe3, 0x19,
-        0xec, 0xf4, 0xbb, 0xd9, 0xe3, 0x7d,
-        0x08, 0x00,
-        // ip header
-        0x45, 0x00, 0x00, 0x34, 0x1b, 0x63,
-        0x40, 0x00, 0x80, 0x06, 0xcd, 0x72,
-        0xc0, 0xa8, 0xc8, 0x87,
-        0xc0, 0xa8, 0xc8, 0x15,
-        // tcp header
-        0x1a, 0x37, 0x07, 0xd0, 0xdd, 0x6a,
-        0xbb, 0x2a, 0x00, 0x00, 0x00, 0x00,
-        0x80, 0x02, 0xfa, 0xf0, 0x12, 0x15,
-        0x00, 0x00, 0x02, 0x04, 0x05, 0xb4,
-        0x01, 0x03, 0x03, 0x08, 0x01, 0x01,
-        0x04, 0x02
-    ];
-
-    #[rustfmt::skip]
-    const ICMP_PACKET: [u8;50] = [
-        // ethernet header
-        0x00, 0x0c, 0x29, 0x1c, 0xe3, 0x19,
-        0xec, 0xf4, 0xbb, 0xd9, 0xe3, 0x7d,
-        0x08, 0x00,
-        // ip header
-        0x45, 0x00, 0x00, 0x34, 0x1b, 0x63,
-        0x40, 0x00, 0x80, 0x01, 0xcd, 0x72,
-        0x02, 0x01, 0x01, 0x02,
-        0x02, 0x01, 0x01, 0x01,
-        // icmp header
-        0x08, 0x00, 0x4d, 0x71, 0x13, 0xc2,
-        0x00, 0x01, 0x14, 0x2b, 0xd2, 0x59,
-        0x00, 0x00, 0x00, 0x00
-    ];
-
-    #[rustfmt::skip]
-    const ARP_PACKET: [u8;42] = [
-        0x01, 0x01, 0x01, 0x01, 0x01, 0x01,         // dst MAC
-        0x02, 0x02, 0x02, 0x02, 0x02, 0x02,         // src MAC
-        0x08, 0x06,                                 // ether type: ARP
-        0x00, 0x01,                                 // HTYPE: ethernet
-        0x08, 0x00,                                 // PTYPE: IPv4
-        6,                                          // HLEN: 6 bytes for ethernet
-        4,                                          // PLEN: 4 bytes for IPv4
-        0x00, 0x02,                                 // operation: 2 is ARP reply
-        0x01, 0x01, 0x01, 0x01, 0x01, 0x01,         // sender MAC
-        192, 168, 1, 251,                           // sender IP
-        0x02, 0x02, 0x02, 0x02, 0x02, 0x02,         // target MAC
-        192, 168, 1, 1,                             // target IP
-    ];
+    use crate::dev::raw_packets::{ARP_PACKET, ICMP_PACKET, TCP_PACKET};
 
     #[test]
-    fn test_tcp_packet() {
+    fn test_tcp_packet_fields() {
         let headers = PacketHeaders::from_ethernet_slice(&TCP_PACKET).unwrap();
         let ip_header = headers.ip;
         let transport_header = headers.transport;
@@ -155,7 +102,7 @@ mod tests {
     }
 
     #[test]
-    fn test_icmp_packet() {
+    fn test_icmp_packet_fields() {
         let headers = PacketHeaders::from_ethernet_slice(&ICMP_PACKET).unwrap();
         let ip_header = headers.ip;
         let transport_header = headers.transport;
@@ -166,15 +113,15 @@ mod tests {
         );
         assert_eq!(
             get_dest(ip_header),
-            Some(IpAddr::from_str("2.1.1.1").unwrap())
+            Some(IpAddr::from_str("2.1.1.2").unwrap())
         );
-        assert_eq!(get_icmp_type(transport_header.clone()), Some(8)); // echo request
+        assert_eq!(get_icmp_type(transport_header.clone()), Some(9)); // echo request
         assert_eq!(get_sport(transport_header.clone()), None);
         assert_eq!(get_dport(transport_header), None);
     }
 
     #[test]
-    fn test_arp_packet() {
+    fn test_arp_packet_fields() {
         let headers = PacketHeaders::from_ethernet_slice(&ARP_PACKET).unwrap();
         let ip_header = headers.ip;
         let transport_header = headers.transport;
