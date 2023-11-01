@@ -1,4 +1,4 @@
-use crate::dev::firewall::{FirewallAction, FirewallRule, FirewallDirection};
+use crate::dev::firewall::{FirewallAction, FirewallDirection};
 use colored::Colorize;
 use etherparse::{IpHeader, PacketHeaders, TransportHeader};
 

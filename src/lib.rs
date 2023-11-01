@@ -29,7 +29,7 @@ use self::memory::*;
 use self::pci::*;
 use self::virtio::VirtioDevice;
 
-use crate::dev::firewall::{Firewall, FirewallRule};
+use crate::dev::firewall::{Firewall};
 use std::collections::VecDeque;
 use std::error::Error;
 use std::os::unix::io::RawFd;

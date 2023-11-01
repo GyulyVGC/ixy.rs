@@ -401,7 +401,7 @@ impl FirewallRule {
 }
 
 /// The firewall of our driver
-#[derive(Debug, Eq, PartialEq)]
+#[derive(Debug, Eq, PartialEq, Default)]
 pub struct Firewall {
     pub rules: Vec<FirewallRule>
 }

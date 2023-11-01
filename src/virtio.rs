@@ -9,7 +9,7 @@ use std::sync::atomic::{self, Ordering};
 use std::time::Duration;
 use std::{io, mem, slice, thread};
 
-use crate::dev::firewall::{FirewallAction, FirewallRule, FirewallDirection, Firewall};
+use crate::dev::firewall::{FirewallAction, FirewallDirection, Firewall};
 use crate::dev::sniffer::{print_packet_info};
 use crate::memory;
 use crate::memory::{Dma, Packet, PACKET_HEADROOM};
@@ -368,7 +368,7 @@ impl VirtioDevice {
             tx_pkts: 0,
             rx_bytes: 0,
             tx_bytes: 0,
-            firewall: Vec::new(),
+            firewall: Firewall::default(),
         };
 
         // recheck status
