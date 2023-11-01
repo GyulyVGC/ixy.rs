@@ -421,7 +421,7 @@ impl Firewall {
     pub fn determine_action_for_packet(&self, packet: &[u8], direction: FirewallDirection) -> FirewallAction {
         let mut action = FirewallAction::default();
         let mut current_specificity = 0;
-        for rule in self.rules {
+        for rule in &self.rules {
             if rule.matches_packet(packet, &direction) && rule.specificity() >= current_specificity {
                 current_specificity = rule.specificity();
                 action = rule.action;
@@ -433,9 +433,8 @@ impl Firewall {
 
 #[cfg(test)]
 mod tests {
-    use crate::dev::firewall::{FirewallAction, FirewallOption, IpCollection, FirewallDirection, PortCollection};
+    use crate::dev::firewall::{FirewallAction, FirewallOption, IpCollection, FirewallDirection, PortCollection, FirewallRule};
     use crate::dev::raw_packets::{ARP_PACKET, ICMP_PACKET, TCP_PACKET};
-    use crate::FirewallRule;
     use std::net::IpAddr;
     use std::ops::RangeInclusive;
     use std::str::FromStr;
