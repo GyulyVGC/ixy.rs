@@ -666,9 +666,10 @@ mod tests {
         let dest_opt = FwOption::new("--dest", "192.168.200.21,8.8.8.8,2.1.1.2");
         let range_dest_opt = FwOption::new("--dest", "192.168.200.0-192.168.200.255,8.8.8.8");
         let range_dest_opt_miss = FwOption::new("--dest", "192.168.200.0-192.168.200.20,8.8.8.8");
-        let source_opt = FwOption::new("--dest", "192.168.200.0-192.168.200.255,2.1.1.2");
+        let source_opt = FwOption::new("--source", "192.168.200.0-192.168.200.255,2.1.1.2");
         let dport_opt = FwOption::new("--dport", "2000");
         let range_dport_opt = FwOption::new("--dport", "6700:6750");
+        let sport_opt_wrong = FwOption::new("--sport", "2000");
         let sport_opt_miss = FwOption::new("--sport", "6712");
         let range_sport_opt = FwOption::new("--sport", "6711:6750");
         let range_sport_opt_miss = FwOption::new("--sport", "6712:6750");
@@ -684,6 +685,7 @@ mod tests {
         assert!(source_opt.matches_packet(&TCP_PACKET));
         assert!(dport_opt.matches_packet(&TCP_PACKET));
         assert!(!range_dport_opt.matches_packet(&TCP_PACKET));
+        assert!(!sport_opt_wrong.matches_packet(&TCP_PACKET));
         assert!(!sport_opt_miss.matches_packet(&TCP_PACKET));
         assert!(range_sport_opt.matches_packet(&TCP_PACKET));
         assert!(!range_sport_opt_miss.matches_packet(&TCP_PACKET));
