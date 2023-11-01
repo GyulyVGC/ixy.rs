@@ -661,6 +661,7 @@ mod tests {
         .is_err());
     }
 
+    #[test]
     fn test_options_match_packets() {
         let dest_opt = FwOption::new("--dest", "192.168.200.21,8.8.8.8");
         let range_dest_opt = FwOption::new("--dest", "192.168.200.0-192.168.200.255,8.8.8.8");

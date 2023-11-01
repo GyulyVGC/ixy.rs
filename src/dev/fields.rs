@@ -113,9 +113,9 @@ mod tests {
         );
         assert_eq!(
             get_dest(ip_header),
-            Some(IpAddr::from_str("2.1.1.2").unwrap())
+            Some(IpAddr::from_str("2.1.1.1").unwrap())
         );
-        assert_eq!(get_icmp_type(transport_header.clone()), Some(9)); // echo request
+        assert_eq!(get_icmp_type(transport_header.clone()), Some(8)); // echo request
         assert_eq!(get_sport(transport_header.clone()), None);
         assert_eq!(get_dport(transport_header), None);
     }
