@@ -743,21 +743,23 @@ mod tests {
         assert!(rule_4_ok_in.matches_packet(&TCP_PACKET, &PacketDirection::In));
         assert!(!rule_4_ok_in.matches_packet(&ICMP_PACKET, &PacketDirection::Out));
         assert!(!rule_4_ok_in.matches_packet(&ICMP_PACKET, &PacketDirection::In));
-        let rule_5_ok_out = FwRule::new("OUT ACCEPT --source 192.168.200.135 --dport 1999:2001 --sport 6711");
+        let rule_5_ok_out =
+            FwRule::new("OUT ACCEPT --source 192.168.200.135 --dport 1999:2001 --sport 6711");
         assert!(rule_5_ok_out.matches_packet(&TCP_PACKET, &PacketDirection::Out));
         assert!(!rule_5_ok_out.matches_packet(&TCP_PACKET, &PacketDirection::In));
         assert!(!rule_5_ok_out.matches_packet(&ICMP_PACKET, &PacketDirection::Out));
         assert!(!rule_5_ok_out.matches_packet(&ICMP_PACKET, &PacketDirection::In));
-        let rule_6_ko = FwRule::new("OUT REJECT --source 192.168.200.135 --dport 1999:2001 --sport 6710");
+        let rule_6_ko =
+            FwRule::new("OUT REJECT --source 192.168.200.135 --dport 1999:2001 --sport 6710");
         assert!(!rule_6_ko.matches_packet(&TCP_PACKET, &PacketDirection::Out));
         assert!(!rule_6_ko.matches_packet(&TCP_PACKET, &PacketDirection::In));
         assert!(!rule_6_ko.matches_packet(&ICMP_PACKET, &PacketDirection::Out));
         assert!(!rule_6_ko.matches_packet(&ICMP_PACKET, &PacketDirection::In));
         let rule_7_ok_out = FwRule::new("OUT REJECT --source 192.168.200.135 --dport 1999:2001 --sport 6711 --dest 192.168.200.10-192.168.200.21");
-        assert!(rule_7_ko.matches_packet(&TCP_PACKET, &PacketDirection::Out));
-        assert!(!rule_7_ko.matches_packet(&TCP_PACKET, &PacketDirection::In));
-        assert!(!rule_7_ko.matches_packet(&ICMP_PACKET, &PacketDirection::Out));
-        assert!(!rule_7_ko.matches_packet(&ICMP_PACKET, &PacketDirection::In));
+        assert!(rule_7_ok_out.matches_packet(&TCP_PACKET, &PacketDirection::Out));
+        assert!(!rule_7_ok_out.matches_packet(&TCP_PACKET, &PacketDirection::In));
+        assert!(!rule_7_ok_out.matches_packet(&ICMP_PACKET, &PacketDirection::Out));
+        assert!(!rule_7_ok_out.matches_packet(&ICMP_PACKET, &PacketDirection::In));
         let rule_8_ko = FwRule::new("OUT REJECT --source 192.168.200.135 --dport 1999:2001 --sport 6711 --dest 192.168.200.10-192.168.200.20");
         assert!(!rule_8_ko.matches_packet(&TCP_PACKET, &PacketDirection::Out));
         assert!(!rule_8_ko.matches_packet(&TCP_PACKET, &PacketDirection::In));
