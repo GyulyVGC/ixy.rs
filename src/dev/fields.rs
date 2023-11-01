@@ -72,7 +72,7 @@ pub fn get_icmp_type(transport_header: Option<TransportHeader>) -> Option<u8> {
     }
 }
 
-#[test]
+#[cfg(test)]
 mod tests {
     use crate::dev::fields::{
         get_dest, get_dport, get_icmp_type, get_proto, get_source, get_sport,
