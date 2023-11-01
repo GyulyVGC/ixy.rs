@@ -124,20 +124,17 @@ impl PortCollection {
             if part.contains(':') {
                 // port range
                 let mut subparts = part.split(':');
-                let range = RangeInclusive::new(
-                    u16::from_str(
-                        subparts
-                            .next()
-                            .unwrap_or_else(|| panic!("{}", FirewallError::InvalidPorts.to_string())),
-                    )
-                    .unwrap_or_else(|_| panic!("{}", FirewallError::InvalidPorts.to_string())),
-                    u16::from_str(
-                        subparts
-                            .next()
-                            .unwrap_or_else(|| panic!("{}", FirewallError::InvalidPorts.to_string())),
-                    )
-                    .unwrap_or_else(|_| panic!("{}", FirewallError::InvalidPorts.to_string())),
-                );
+                let range =
+                    RangeInclusive::new(
+                        u16::from_str(subparts.next().unwrap_or_else(|| {
+                            panic!("{}", FirewallError::InvalidPorts.to_string())
+                        }))
+                        .unwrap_or_else(|_| panic!("{}", FirewallError::InvalidPorts.to_string())),
+                        u16::from_str(subparts.next().unwrap_or_else(|| {
+                            panic!("{}", FirewallError::InvalidPorts.to_string())
+                        }))
+                        .unwrap_or_else(|_| panic!("{}", FirewallError::InvalidPorts.to_string())),
+                    );
                 ranges.push(range);
             } else {
                 // individual port
@@ -180,20 +177,17 @@ impl IpCollection {
             if part.contains('-') {
                 // IP range
                 let mut subparts = part.split('-');
-                let range = RangeInclusive::new(
-                    IpAddr::from_str(
-                        subparts
-                            .next()
-                            .unwrap_or_else(|| panic!("{}", FirewallError::InvalidIps.to_string())),
-                    )
-                    .unwrap_or_else(|_| panic!("{}", FirewallError::InvalidIps.to_string())),
-                    IpAddr::from_str(
-                        subparts
-                            .next()
-                            .unwrap_or_else(|| panic!("{}", FirewallError::InvalidIps.to_string())),
-                    )
-                    .unwrap_or_else(|_| panic!("{}", FirewallError::InvalidIps.to_string())),
-                );
+                let range =
+                    RangeInclusive::new(
+                        IpAddr::from_str(subparts.next().unwrap_or_else(|| {
+                            panic!("{}", FirewallError::InvalidIps.to_string())
+                        }))
+                        .unwrap_or_else(|_| panic!("{}", FirewallError::InvalidIps.to_string())),
+                        IpAddr::from_str(subparts.next().unwrap_or_else(|| {
+                            panic!("{}", FirewallError::InvalidIps.to_string())
+                        }))
+                        .unwrap_or_else(|_| panic!("{}", FirewallError::InvalidIps.to_string())),
+                    );
                 ranges.push(range);
             } else {
                 // individual IP
@@ -286,7 +280,9 @@ impl FirewallOption {
                         false
                     }
                 }
-                FirewallOption::Source(ip_collection) => ip_collection.contains(get_source(ip_header)),
+                FirewallOption::Source(ip_collection) => {
+                    ip_collection.contains(get_source(ip_header))
+                }
                 FirewallOption::Sport(port_collection) => {
                     port_collection.contains(get_sport(transport_header))
                 }
@@ -338,9 +334,9 @@ impl FirewallRule {
         let mut options = Vec::new();
         loop {
             let option = parts.next();
-            if option.is_some() {
+            if let Some(option_str) = option {
                 let firewall_option = FirewallOption::new(
-                    option.unwrap(),
+                    option_str,
                     parts
                         .next()
                         .unwrap_or_else(|| panic!("{}", FirewallError::EmptyOption.to_string())),
@@ -403,26 +399,29 @@ impl FirewallRule {
 /// The firewall of our driver
 #[derive(Debug, Eq, PartialEq, Default)]
 pub struct Firewall {
-    pub rules: Vec<FirewallRule>
+    pub rules: Vec<FirewallRule>,
 }
 
 impl Firewall {
     pub fn new(file_path: &str) -> Self {
         let mut rules = Vec::new();
         let file = File::open(file_path).unwrap();
-        for line in BufReader::new(file).lines() {
-            if let Ok(firewall_rule_str) = line {
-                rules.push(FirewallRule::new(&firewall_rule_str));
-            }
+        for firewall_rule_str in BufReader::new(file).lines().flatten() {
+            rules.push(FirewallRule::new(&firewall_rule_str));
         }
         Self { rules }
     }
 
-    pub fn determine_action_for_packet(&self, packet: &[u8], direction: FirewallDirection) -> FirewallAction {
+    pub fn determine_action_for_packet(
+        &self,
+        packet: &[u8],
+        direction: FirewallDirection,
+    ) -> FirewallAction {
         let mut action = FirewallAction::default();
         let mut current_specificity = 0;
         for rule in &self.rules {
-            if rule.matches_packet(packet, &direction) && rule.specificity() >= current_specificity {
+            if rule.matches_packet(packet, &direction) && rule.specificity() >= current_specificity
+            {
                 current_specificity = rule.specificity();
                 action = rule.action;
             }
@@ -433,7 +432,10 @@ impl Firewall {
 
 #[cfg(test)]
 mod tests {
-    use crate::dev::firewall::{FirewallAction, FirewallOption, IpCollection, FirewallDirection, PortCollection, FirewallRule};
+    use crate::dev::firewall::{
+        FirewallAction, FirewallDirection, FirewallOption, FirewallRule, IpCollection,
+        PortCollection,
+    };
     use crate::dev::raw_packets::{ARP_PACKET, ICMP_PACKET, TCP_PACKET};
     use std::net::IpAddr;
     use std::ops::RangeInclusive;
@@ -586,9 +588,15 @@ mod tests {
             FirewallOption::Dport(PortCollection::new("1,2,10:20,3,4,999:1200"))
         );
 
-        assert_eq!(FirewallOption::new("--icmp-type", "8"), FirewallOption::IcmpType(8));
+        assert_eq!(
+            FirewallOption::new("--icmp-type", "8"),
+            FirewallOption::IcmpType(8)
+        );
 
-        assert_eq!(FirewallOption::new("--proto", "1"), FirewallOption::Proto(1));
+        assert_eq!(
+            FirewallOption::new("--proto", "1"),
+            FirewallOption::Proto(1)
+        );
 
         assert_eq!(
             FirewallOption::new(
@@ -605,7 +613,9 @@ mod tests {
             FirewallOption::Sport(PortCollection::new("1,2,10:20,3,4,999:1200"))
         );
 
-        assert!(std::panic::catch_unwind(|| FirewallOption::new("--not-exists", "8.8.8.8")).is_err());
+        assert!(
+            std::panic::catch_unwind(|| FirewallOption::new("--not-exists", "8.8.8.8")).is_err()
+        );
     }
 
     #[test]
@@ -697,7 +707,8 @@ mod tests {
     fn test_options_match_packets() {
         let dest_opt = FirewallOption::new("--dest", "192.168.200.21,8.8.8.8,2.1.1.2");
         let range_dest_opt = FirewallOption::new("--dest", "192.168.200.0-192.168.200.255,8.8.8.8");
-        let range_dest_opt_miss = FirewallOption::new("--dest", "192.168.200.0-192.168.200.20,8.8.8.8");
+        let range_dest_opt_miss =
+            FirewallOption::new("--dest", "192.168.200.0-192.168.200.20,8.8.8.8");
         let source_opt = FirewallOption::new("--source", "192.168.200.0-192.168.200.255,2.1.1.2");
         let dport_opt = FirewallOption::new("--dport", "2000");
         let range_dport_opt = FirewallOption::new("--dport", "6700:6750");
@@ -765,12 +776,14 @@ mod tests {
         assert!(rule_2.matches_packet(&TCP_PACKET, &FirewallDirection::In));
         assert!(!rule_2.matches_packet(&ICMP_PACKET, &FirewallDirection::Out));
         assert!(rule_2.matches_packet(&ICMP_PACKET, &FirewallDirection::In));
-        let rule_3_ok_out = FirewallRule::new("OUT REJECT --source 192.168.200.135 --dport 1999:2001");
+        let rule_3_ok_out =
+            FirewallRule::new("OUT REJECT --source 192.168.200.135 --dport 1999:2001");
         assert!(rule_3_ok_out.matches_packet(&TCP_PACKET, &FirewallDirection::Out));
         assert!(!rule_3_ok_out.matches_packet(&TCP_PACKET, &FirewallDirection::In));
         assert!(!rule_3_ok_out.matches_packet(&ICMP_PACKET, &FirewallDirection::Out));
         assert!(!rule_3_ok_out.matches_packet(&ICMP_PACKET, &FirewallDirection::In));
-        let rule_4_ok_in = FirewallRule::new("IN REJECT --source 192.168.200.135 --dport 1999:2001");
+        let rule_4_ok_in =
+            FirewallRule::new("IN REJECT --source 192.168.200.135 --dport 1999:2001");
         assert!(!rule_4_ok_in.matches_packet(&TCP_PACKET, &FirewallDirection::Out));
         assert!(rule_4_ok_in.matches_packet(&TCP_PACKET, &FirewallDirection::In));
         assert!(!rule_4_ok_in.matches_packet(&ICMP_PACKET, &FirewallDirection::Out));
