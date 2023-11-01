@@ -1,13 +1,13 @@
 use std::collections::VecDeque;
 use std::fs::File;
-use std::io::{self, BufRead, BufReader, Write};
+use std::io::{self, Write};
 use std::time::{SystemTime, UNIX_EPOCH};
 use std::{env, process};
 
 use byteorder::{WriteBytesExt, LE};
 use colored::Colorize;
 use etherparse::PacketHeaders;
-use ixy::dev::firewall::{Firewall, FirewallRule};
+use ixy::dev::firewall::{Firewall};
 use ixy::memory::{alloc_pkt_batch, Mempool, Packet};
 use ixy::*;
 use simple_logger::SimpleLogger;
