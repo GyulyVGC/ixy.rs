@@ -2,22 +2,6 @@ use crate::dev::firewall::{FirewallAction, FirewallRule, FirewallDirection};
 use colored::Colorize;
 use etherparse::{IpHeader, PacketHeaders, TransportHeader};
 
-pub fn firewall_action_for_packet(
-    packet: &[u8],
-    direction: FirewallDirection,
-    firewall_rules: &Vec<FirewallRule>,
-) -> FirewallAction {
-    let mut action = FirewallAction::default();
-    let mut current_specificity = 0;
-    for rule in firewall_rules {
-        if rule.matches_packet(packet, &direction) && rule.specificity() >= current_specificity {
-            current_specificity = rule.specificity();
-            action = rule.action;
-        }
-    }
-    action
-}
-
 pub fn print_packet_info(pkt_data: &[u8], direction: FirewallDirection, action: FirewallAction) {
     let mut src_port = 0;
     let mut dst_port = 0;

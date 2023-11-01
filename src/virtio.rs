@@ -9,8 +9,8 @@ use std::sync::atomic::{self, Ordering};
 use std::time::Duration;
 use std::{io, mem, slice, thread};
 
-use crate::dev::firewall::{FirewallAction, FirewallRule, FirewallDirection};
-use crate::dev::sniffer::{firewall_action_for_packet, print_packet_info};
+use crate::dev::firewall::{FirewallAction, FirewallRule, FirewallDirection, Firewall};
+use crate::dev::sniffer::{print_packet_info};
 use crate::memory;
 use crate::memory::{Dma, Packet, PACKET_HEADROOM};
 use crate::pci::{self, read_io16, read_io32, read_io8, write_io16, write_io32, write_io8};
@@ -53,8 +53,8 @@ pub struct VirtioDevice {
     rx_bytes: u64,
     tx_bytes: u64,
 
-    // firewall rules
-    firewall_rules: Vec<FirewallRule>,
+    // firewall rules for the device
+    firewall: Firewall,
 }
 
 impl IxyDevice for VirtioDevice {
@@ -128,7 +128,7 @@ impl IxyDevice for VirtioDevice {
 
             // MATCH AGAINST FIREWALL RULES
             let action =
-                firewall_action_for_packet(&buf[..], FirewallDirection::In, &self.firewall_rules);
+                self.firewall.determine_action_for_packet(&buf[..], FirewallDirection::In);
 
             // SNIFF PACKETS
             print_packet_info(&buf[..], FirewallDirection::In, action);
@@ -201,7 +201,7 @@ impl IxyDevice for VirtioDevice {
 
             // MATCH AGAINST FIREWALL RULES
             let action =
-                firewall_action_for_packet(&packet[..], FirewallDirection::Out, &self.firewall_rules);
+                self.firewall.determine_action_for_packet(&packet[..], FirewallDirection::Out);
 
             // SNIFF PACKETS
             print_packet_info(&packet[..], FirewallDirection::Out, action);
@@ -278,8 +278,8 @@ impl IxyDevice for VirtioDevice {
         1000
     }
 
-    fn set_firewall_rules(&mut self, firewall_rules: Vec<FirewallRule>) {
-        self.firewall_rules = firewall_rules;
+    fn set_firewall(&mut self, firewall: Firewall) {
+        self.firewall = firewall;
     }
 }
 
@@ -368,7 +368,7 @@ impl VirtioDevice {
             tx_pkts: 0,
             rx_bytes: 0,
             tx_bytes: 0,
-            firewall_rules: Vec::new(),
+            firewall: Vec::new(),
         };
 
         // recheck status

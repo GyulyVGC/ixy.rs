@@ -71,7 +71,7 @@ fn transmit(pci_addr: String) {
             firewall_rules.push(FirewallRule::new(&firewall_rule));
         }
     }
-    dev.set_firewall_rules(firewall_rules);
+    dev.set_firewall(firewall_rules);
 
     // packet to send
     #[rustfmt::skip]
@@ -150,7 +150,7 @@ fn receive(pci_addr: String) {
         }
     }
     println!("FIREWALL RULES SET:\n{:#?}", firewall_rules);
-    dev.set_firewall_rules(firewall_rules);
+    dev.set_firewall(firewall_rules);
 
     loop {
         // wait 0.5 second before receiving other packets, to not poll unnecessarily

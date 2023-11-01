@@ -7,7 +7,7 @@ use std::{env, process};
 use byteorder::{WriteBytesExt, LE};
 use colored::Colorize;
 use etherparse::PacketHeaders;
-use ixy::dev::firewall::FirewallRule;
+use ixy::dev::firewall::{Firewall, FirewallRule};
 use ixy::memory::{alloc_pkt_batch, Mempool, Packet};
 use ixy::*;
 use simple_logger::SimpleLogger;
@@ -50,14 +50,7 @@ pub fn main() -> Result<(), io::Error> {
     let mut dev = ixy_init(&pci_addr, 1, 1, 0).unwrap();
 
     // set custom firewall rules for the device (read from a file)
-    let mut firewall_rules = Vec::new();
-    let file = File::open("./examples/firewall.txt").unwrap();
-    for line in BufReader::new(file).lines() {
-        if let Ok(firewall_rule) = line {
-            firewall_rules.push(FirewallRule::new(&firewall_rule));
-        }
-    }
-    dev.set_firewall_rules(firewall_rules);
+    dev.set_firewall(Firewall::new("./examples/firewall.txt"));
 
     println!("MAC address: {:02X?}", dev.get_mac_addr());
 

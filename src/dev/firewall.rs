@@ -2,6 +2,8 @@ use crate::dev::fields::{get_dest, get_dport, get_icmp_type, get_proto, get_sour
 use etherparse::PacketHeaders;
 use std::collections::HashMap;
 use std::fmt::{Display, Formatter};
+use std::fs::File;
+use std::io::{BufRead, BufReader};
 use std::net::IpAddr;
 use std::ops::RangeInclusive;
 use std::str::FromStr;
@@ -395,6 +397,37 @@ impl FirewallRule {
                 _ => {}
             }
         }
+    }
+}
+
+/// The firewall of our driver
+#[derive(Debug, Eq, PartialEq)]
+pub struct Firewall {
+    pub rules: Vec<FirewallRule>
+}
+
+impl Firewall {
+    pub fn new(file_path: &str) -> Self {
+        let mut rules = Vec::new();
+        let file = File::open(file_path).unwrap();
+        for line in BufReader::new(file).lines() {
+            if let Ok(firewall_rule_str) = line {
+                rules.push(FirewallRule::new(&firewall_rule_str));
+            }
+        }
+        Self { rules }
+    }
+
+    pub fn determine_action_for_packet(&self, packet: &[u8], direction: FirewallDirection) -> FirewallAction {
+        let mut action = FirewallAction::default();
+        let mut current_specificity = 0;
+        for rule in self.rules {
+            if rule.matches_packet(packet, &direction) && rule.specificity() >= current_specificity {
+                current_specificity = rule.specificity();
+                action = rule.action;
+            }
+        }
+        action
     }
 }
 
