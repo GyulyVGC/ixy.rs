@@ -401,11 +401,11 @@ impl FwRule {
 #[cfg(test)]
 mod tests {
     use crate::dev::firewall::{FwAction, FwOption, IpCollection, PacketDirection, PortCollection};
+    use crate::dev::raw_packets::{ARP_PACKET, ICMP_PACKET, TCP_PACKET};
     use crate::FwRule;
     use std::net::IpAddr;
     use std::ops::RangeInclusive;
     use std::str::FromStr;
-    use crate::dev::raw_packets::{ARP_PACKET, ICMP_PACKET, TCP_PACKET};
 
     #[test]
     fn test_new_port_collections() {
@@ -719,5 +719,74 @@ mod tests {
         assert!(!wrong_icmp_type_opt.matches_packet(&ARP_PACKET));
         assert!(!tcp_proto_opt.matches_packet(&ARP_PACKET));
         assert!(!icmp_proto_opt.matches_packet(&ARP_PACKET));
+    }
+
+    #[test]
+    fn test_rules_match_packets() {
+        let rule_1 = FwRule::new("OUT DENY");
+        assert!(rule_1.matches_packet(&TCP_PACKET, &PacketDirection::Out));
+        assert!(!rule_1.matches_packet(&TCP_PACKET, &PacketDirection::In));
+        assert!(rule_1.matches_packet(&ICMP_PACKET, &PacketDirection::Out));
+        assert!(!rule_1.matches_packet(&ICMP_PACKET, &PacketDirection::In));
+        let rule_2 = FwRule::new("IN DENY");
+        assert!(!rule_2.matches_packet(&TCP_PACKET, &PacketDirection::Out));
+        assert!(rule_2.matches_packet(&TCP_PACKET, &PacketDirection::In));
+        assert!(!rule_2.matches_packet(&ICMP_PACKET, &PacketDirection::Out));
+        assert!(rule_2.matches_packet(&ICMP_PACKET, &PacketDirection::In));
+        let rule_3_ok_out = FwRule::new("OUT REJECT --source 192.168.200.135 --dport 1999:2001");
+        assert!(rule_3_ok_out.matches_packet(&TCP_PACKET, &PacketDirection::Out));
+        assert!(!rule_3_ok_out.matches_packet(&TCP_PACKET, &PacketDirection::In));
+        assert!(!rule_3_ok_out.matches_packet(&ICMP_PACKET, &PacketDirection::Out));
+        assert!(!rule_3_ok_out.matches_packet(&ICMP_PACKET, &PacketDirection::In));
+        let rule_4_ok_in = FwRule::new("IN REJECT --source 192.168.200.135 --dport 1999:2001");
+        assert!(!rule_4_ok_in.matches_packet(&TCP_PACKET, &PacketDirection::Out));
+        assert!(rule_4_ok_in.matches_packet(&TCP_PACKET, &PacketDirection::In));
+        assert!(!rule_4_ok_in.matches_packet(&ICMP_PACKET, &PacketDirection::Out));
+        assert!(!rule_4_ok_in.matches_packet(&ICMP_PACKET, &PacketDirection::In));
+        let rule_5_ok_out = FwRule::new("OUT ACCEPT --source 192.168.200.135 --dport 1999:2001 --sport 6711");
+        assert!(rule_5_ok_out.matches_packet(&TCP_PACKET, &PacketDirection::Out));
+        assert!(!rule_5_ok_out.matches_packet(&TCP_PACKET, &PacketDirection::In));
+        assert!(!rule_5_ok_out.matches_packet(&ICMP_PACKET, &PacketDirection::Out));
+        assert!(!rule_5_ok_out.matches_packet(&ICMP_PACKET, &PacketDirection::In));
+        let rule_6_ko = FwRule::new("OUT REJECT --source 192.168.200.135 --dport 1999:2001 --sport 6710");
+        assert!(!rule_6_ko.matches_packet(&TCP_PACKET, &PacketDirection::Out));
+        assert!(!rule_6_ko.matches_packet(&TCP_PACKET, &PacketDirection::In));
+        assert!(!rule_6_ko.matches_packet(&ICMP_PACKET, &PacketDirection::Out));
+        assert!(!rule_6_ko.matches_packet(&ICMP_PACKET, &PacketDirection::In));
+        let rule_7_ok_out = FwRule::new("OUT REJECT --source 192.168.200.135 --dport 1999:2001 --sport 6711 --dest 192.168.200.10-192.168.200.21");
+        assert!(rule_7_ko.matches_packet(&TCP_PACKET, &PacketDirection::Out));
+        assert!(!rule_7_ko.matches_packet(&TCP_PACKET, &PacketDirection::In));
+        assert!(!rule_7_ko.matches_packet(&ICMP_PACKET, &PacketDirection::Out));
+        assert!(!rule_7_ko.matches_packet(&ICMP_PACKET, &PacketDirection::In));
+        let rule_8_ko = FwRule::new("OUT REJECT --source 192.168.200.135 --dport 1999:2001 --sport 6711 --dest 192.168.200.10-192.168.200.20");
+        assert!(!rule_8_ko.matches_packet(&TCP_PACKET, &PacketDirection::Out));
+        assert!(!rule_8_ko.matches_packet(&TCP_PACKET, &PacketDirection::In));
+        assert!(!rule_8_ko.matches_packet(&ICMP_PACKET, &PacketDirection::Out));
+        assert!(!rule_8_ko.matches_packet(&ICMP_PACKET, &PacketDirection::In));
+        let rule_9_ok_in = FwRule::new("IN ACCEPT --proto 6");
+        assert!(!rule_9_ok_in.matches_packet(&TCP_PACKET, &PacketDirection::Out));
+        assert!(rule_9_ok_in.matches_packet(&TCP_PACKET, &PacketDirection::In));
+        assert!(!rule_9_ok_in.matches_packet(&ICMP_PACKET, &PacketDirection::Out));
+        assert!(!rule_9_ok_in.matches_packet(&ICMP_PACKET, &PacketDirection::In));
+        let rule_10_ko = FwRule::new("IN ACCEPT --proto 58");
+        assert!(!rule_10_ko.matches_packet(&TCP_PACKET, &PacketDirection::Out));
+        assert!(!rule_10_ko.matches_packet(&TCP_PACKET, &PacketDirection::In));
+        assert!(!rule_10_ko.matches_packet(&ICMP_PACKET, &PacketDirection::Out));
+        assert!(!rule_10_ko.matches_packet(&ICMP_PACKET, &PacketDirection::In));
+        let rule_11_ko = FwRule::new("IN ACCEPT --proto 1 --icmp-type 8");
+        assert!(!rule_11_ko.matches_packet(&TCP_PACKET, &PacketDirection::Out));
+        assert!(!rule_11_ko.matches_packet(&TCP_PACKET, &PacketDirection::In));
+        assert!(!rule_11_ko.matches_packet(&ICMP_PACKET, &PacketDirection::Out));
+        assert!(rule_11_ko.matches_packet(&ICMP_PACKET, &PacketDirection::In));
+        let rule_12_ko = FwRule::new("OUT DENY --proto 1 --icmp-type 7");
+        assert!(!rule_12_ko.matches_packet(&TCP_PACKET, &PacketDirection::Out));
+        assert!(!rule_12_ko.matches_packet(&TCP_PACKET, &PacketDirection::In));
+        assert!(!rule_12_ko.matches_packet(&ICMP_PACKET, &PacketDirection::Out));
+        assert!(!rule_12_ko.matches_packet(&ICMP_PACKET, &PacketDirection::In));
+        let rule_13_ko = FwRule::new("OUT DENY --proto 1 --icmp-type 8");
+        assert!(!rule_13_ko.matches_packet(&TCP_PACKET, &PacketDirection::Out));
+        assert!(!rule_13_ko.matches_packet(&TCP_PACKET, &PacketDirection::In));
+        assert!(rule_13_ko.matches_packet(&ICMP_PACKET, &PacketDirection::Out));
+        assert!(!rule_13_ko.matches_packet(&ICMP_PACKET, &PacketDirection::In));
     }
 }

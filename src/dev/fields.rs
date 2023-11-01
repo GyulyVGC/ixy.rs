@@ -77,10 +77,10 @@ mod tests {
     use crate::dev::fields::{
         get_dest, get_dport, get_icmp_type, get_proto, get_source, get_sport,
     };
+    use crate::dev::raw_packets::{ARP_PACKET, ICMP_PACKET, TCP_PACKET};
     use etherparse::PacketHeaders;
     use std::net::IpAddr;
     use std::str::FromStr;
-    use crate::dev::raw_packets::{ARP_PACKET, ICMP_PACKET, TCP_PACKET};
 
     #[test]
     fn test_tcp_packet_fields() {
