@@ -437,7 +437,7 @@ impl Firewall {
         direction: FirewallDirection,
     ) -> FirewallAction {
         if !self.enabled {
-            FirewallAction::Accept
+            return FirewallAction::Accept;
         }
 
         let mut action = match direction {
