@@ -2,7 +2,7 @@ use crate::dev::firewall::{FirewallAction, FirewallDirection};
 use colored::Colorize;
 use etherparse::{IpHeader, PacketHeaders, TransportHeader};
 
-pub fn print_packet_info(pkt_data: &[u8], direction: FirewallDirection, action: FirewallAction) {
+pub fn print_packet_info(pkt_data: &[u8], direction: &FirewallDirection, action: FirewallAction) {
     let mut src_port = 0;
     let mut dst_port = 0;
     let mut src_mac = String::new();

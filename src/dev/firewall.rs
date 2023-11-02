@@ -22,7 +22,7 @@ impl Display for FirewallDirection {
             FirewallDirection::Out => "OUT",
         };
 
-        write!(f, "{}", str)
+        write!(f, "{str}")
     }
 }
 
@@ -54,7 +54,7 @@ impl Display for FirewallAction {
             FirewallAction::Reject => "REJECT",
         };
 
-        write!(f, "{}", str)
+        write!(f, "{str}")
     }
 }
 
@@ -104,7 +104,7 @@ impl Display for FirewallError {
             }
         };
 
-        write!(f, "Firewall error - {}", err_info)
+        write!(f, "Firewall error - {err_info}")
     }
 }
 
@@ -388,9 +388,10 @@ impl FirewallRule {
 
         // check there is no duplicate options
         for option in options {
-            if options_map.insert(option.to_option_str(), option).is_some() {
-                panic!("{}", FirewallError::DuplicatedOption.to_string());
-            }
+            assert!(
+                options_map.insert(option.to_option_str(), option).is_none(),
+                panic!("{}", FirewallError::DuplicatedOption.to_string())
+            );
         }
 
         // if --icmp-type option is present, --proto 1 || --proto 58 must also be present
@@ -411,7 +412,7 @@ impl FirewallRule {
 }
 
 /// The firewall of our driver
-#[derive(Debug, Eq, PartialEq)]
+#[derive(Debug, Eq, PartialEq, Default)]
 pub struct Firewall {
     rules: Vec<FirewallRule>,
     enabled: bool,
@@ -419,16 +420,17 @@ pub struct Firewall {
     policy_out: FirewallAction,
 }
 
-impl Default for Firewall {
-    fn default() -> Self {
-        Self {
-            rules: vec![],
-            enabled: false,
-            policy_in: FirewallAction::default(),
-            policy_out: FirewallAction::default(),
-        }
-    }
-}
+// for the moment it can be derived
+// impl Default for Firewall {
+//     fn default() -> Self {
+//         Self {
+//             rules: vec![],
+//             enabled: false,
+//             policy_in: FirewallAction::default(),
+//             policy_out: FirewallAction::default(),
+//         }
+//     }
+// }
 
 impl Firewall {
     pub fn new(file_path: &str) -> Self {
@@ -464,7 +466,7 @@ impl Firewall {
     pub fn determine_action_for_packet(
         &self,
         packet: &[u8],
-        direction: FirewallDirection,
+        direction: &FirewallDirection,
     ) -> FirewallAction {
         if !self.enabled {
             return FirewallAction::Accept;
