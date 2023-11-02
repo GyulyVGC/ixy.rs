@@ -115,15 +115,18 @@ struct PortCollection {
 }
 
 impl PortCollection {
+    const SEPARATOR: char = ',';
+    const RANGE_SEPARATOR: char = ':';
+
     fn new(str: &str) -> Self {
         let mut ports = Vec::new();
         let mut ranges = Vec::new();
 
-        let parts: Vec<&str> = str.split(',').collect();
+        let parts: Vec<&str> = str.split(PortCollection::SEPARATOR).collect();
         for part in parts {
-            if part.contains(':') {
+            if part.contains(PortCollection::RANGE_SEPARATOR) {
                 // port range
-                let mut subparts = part.split(':');
+                let mut subparts = part.split(PortCollection::RANGE_SEPARATOR);
                 let (lower_bound, upper_bound) = (
                     subparts
                         .next()
@@ -171,15 +174,18 @@ struct IpCollection {
 }
 
 impl IpCollection {
+    const SEPARATOR: char = ',';
+    const RANGE_SEPARATOR: char = '-';
+
     fn new(str: &str) -> Self {
         let mut ips = Vec::new();
         let mut ranges = Vec::new();
 
-        let parts: Vec<&str> = str.split(',').collect();
+        let parts: Vec<&str> = str.split(IpCollection::SEPARATOR).collect();
         for part in parts {
-            if part.contains('-') {
+            if part.contains(IpCollection::RANGE_SEPARATOR) {
                 // IP range
-                let mut subparts = part.split('-');
+                let mut subparts = part.split(IpCollection::RANGE_SEPARATOR);
                 let (lower_bound, upper_bound) = (
                     subparts
                         .next()
@@ -319,8 +325,10 @@ struct FirewallRule {
 }
 
 impl FirewallRule {
+    const SEPARATOR: char = ' ';
+
     fn new(rule_str: &str) -> Self {
-        let mut parts = rule_str.split(' ');
+        let mut parts = rule_str.split(FirewallRule::SEPARATOR);
 
         // rule direction
         let direction_str = parts
