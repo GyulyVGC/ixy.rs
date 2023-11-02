@@ -1,4 +1,6 @@
-// packets are taken from wireshark sample captures available at <https://wiki.wireshark.org/SampleCaptures>
+/// Packets are taken from wireshark sample captures available at <https://wiki.wireshark.org/SampleCaptures>
+/// These data are mainly used for testing purposes
+
 #[rustfmt::skip]
 pub const TCP_PACKET: [u8;66] = [
     // ethernet header

@@ -437,6 +437,7 @@ mod tests {
         PortCollection,
     };
     use crate::dev::raw_packets::{ARP_PACKET, ICMP_PACKET, TCP_PACKET};
+    use crate::Firewall;
     use std::net::IpAddr;
     use std::ops::RangeInclusive;
     use std::str::FromStr;
@@ -835,5 +836,72 @@ mod tests {
         assert!(!rule_13_ko.matches_packet(&TCP_PACKET, &FirewallDirection::In));
         assert!(rule_13_ko.matches_packet(&ICMP_PACKET, &FirewallDirection::Out));
         assert!(!rule_13_ko.matches_packet(&ICMP_PACKET, &FirewallDirection::In));
+    }
+
+    /// File is placed in examples/firewall_for_tests.txt and its content is the following:
+    /// OUT REJECT --source 192.168.200.135 --sport 6700:6800,8080
+    /// OUT REJECT --source 192.168.200.135 --sport 6700:6800,8080 --dport 1,2,2000
+    /// OUT DENY --source 192.168.200.135-192.168.200.140 --sport 6700:6800,8080 --dport 1,2,2000
+    /// OUT REJECT --source 192.168.200.135 --sport 6750:6800,8080 --dest 192.168.200.21 --dport 1,2,2000
+    /// IN ACCEPT --source 2.1.1.2 --dest 2.1.1.1 --proto 1
+    /// IN REJECT --source 2.1.1.2 --dest 2.1.1.1 --proto 1 --icmp-type 8
+    /// IN ACCEPT --source 2.1.1.2 --dest 2.1.1.1 --proto 1 --icmp-type 9
+    /// IN ACCEPT --source 2.1.1.2 --dest 2.1.1.1 --proto 58 --icmp-type 8
+    /// OUT REJECT
+    /// IN ACCEPT
+    #[test]
+    fn test_new_firewall_from_file() {
+        assert_eq!(
+            Firewall::new("./examples/firewall_for_tests.txt"),
+            Firewall {
+                rules: vec![
+                    FirewallRule::new("OUT REJECT --source 192.168.200.135 --sport 6700:6800,8080"),
+                    FirewallRule::new("OUT REJECT --source 192.168.200.135 --sport 6700:6800,8080 --dport 1,2,2000"),
+                    FirewallRule::new("OUT DENY --source 192.168.200.135-192.168.200.140 --sport 6700:6800,8080 --dport 1,2,2000"),
+                    FirewallRule::new("OUT REJECT --source 192.168.200.135 --sport 6750:6800,8080 --dest 192.168.200.21 --dport 1,2,2000"),
+                    FirewallRule::new("IN ACCEPT --source 2.1.1.2 --dest 2.1.1.1 --proto 1"),
+                    FirewallRule::new("IN REJECT --source 2.1.1.2 --dest 2.1.1.1 --proto 1 --icmp-type 8"),
+                    FirewallRule::new("IN ACCEPT --source 2.1.1.2 --dest 2.1.1.1 --proto 1 --icmp-type 9"),
+                    FirewallRule::new("IN ACCEPT --source 2.1.1.2 --dest 2.1.1.1 --proto 58 --icmp-type 8"),
+                    FirewallRule::new("OUT REJECT"),
+                    FirewallRule::new("IN ACCEPT"),
+                ]
+            }
+        )
+    }
+
+    #[test]
+    fn test_determine_action_for_packet() {
+        let firewall = Firewall::new("./examples/firewall_for_tests.txt");
+
+        // tcp packet
+        assert_eq!(
+            firewall.determine_action_for_packet(&TCP_PACKET, FirewallDirection::In),
+            FirewallAction::Accept
+        );
+        assert_eq!(
+            firewall.determine_action_for_packet(&TCP_PACKET, FirewallDirection::Out),
+            FirewallAction::Deny
+        );
+
+        // icmp packet
+        assert_eq!(
+            firewall.determine_action_for_packet(&ICMP_PACKET, FirewallDirection::In),
+            FirewallAction::Reject
+        );
+        assert_eq!(
+            firewall.determine_action_for_packet(&ICMP_PACKET, FirewallDirection::Out),
+            FirewallAction::Reject
+        );
+
+        // arp packet
+        assert_eq!(
+            firewall.determine_action_for_packet(&ARP_PACKET, FirewallDirection::In),
+            FirewallAction::Accept
+        );
+        assert_eq!(
+            firewall.determine_action_for_packet(&ARP_PACKET, FirewallDirection::Out),
+            FirewallAction::Reject
+        );
     }
 }
