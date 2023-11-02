@@ -10,6 +10,7 @@ use std::str::FromStr;
 use std::u16;
 
 #[derive(Debug, Eq, PartialEq)]
+#[allow(clippy::module_name_repetitions)]
 pub enum FirewallDirection {
     In,
     Out,
@@ -39,6 +40,7 @@ impl FromStr for FirewallDirection {
 }
 
 #[derive(Default, Copy, Clone, Eq, PartialEq, Debug)]
+#[allow(clippy::module_name_repetitions)]
 pub enum FirewallAction {
     #[default]
     Accept,
@@ -130,22 +132,22 @@ impl PortCollection {
                 let (lower_bound, upper_bound) = (
                     subparts
                         .next()
-                        .unwrap_or_else(|| panic!("{}", FirewallError::InvalidPorts.to_string())),
+                        .unwrap_or_else(|| panic!("{}", FirewallError::InvalidPorts)),
                     subparts
                         .next()
-                        .unwrap_or_else(|| panic!("{}", FirewallError::InvalidPorts.to_string())),
+                        .unwrap_or_else(|| panic!("{}", FirewallError::InvalidPorts)),
                 );
                 let range = RangeInclusive::new(
                     u16::from_str(lower_bound)
-                        .unwrap_or_else(|_| panic!("{}", FirewallError::InvalidPorts.to_string())),
+                        .unwrap_or_else(|_| panic!("{}", FirewallError::InvalidPorts)),
                     u16::from_str(upper_bound)
-                        .unwrap_or_else(|_| panic!("{}", FirewallError::InvalidPorts.to_string())),
+                        .unwrap_or_else(|_| panic!("{}", FirewallError::InvalidPorts)),
                 );
                 ranges.push(range);
             } else {
                 // individual port
                 let port = u16::from_str(part)
-                    .unwrap_or_else(|_| panic!("{}", FirewallError::InvalidPorts.to_string()));
+                    .unwrap_or_else(|_| panic!("{}", FirewallError::InvalidPorts));
                 ports.push(port);
             }
         }
@@ -189,22 +191,22 @@ impl IpCollection {
                 let (lower_bound, upper_bound) = (
                     subparts
                         .next()
-                        .unwrap_or_else(|| panic!("{}", FirewallError::InvalidIps.to_string())),
+                        .unwrap_or_else(|| panic!("{}", FirewallError::InvalidIps)),
                     subparts
                         .next()
-                        .unwrap_or_else(|| panic!("{}", FirewallError::InvalidIps.to_string())),
+                        .unwrap_or_else(|| panic!("{}", FirewallError::InvalidIps)),
                 );
                 let range = RangeInclusive::new(
                     IpAddr::from_str(lower_bound)
-                        .unwrap_or_else(|_| panic!("{}", FirewallError::InvalidIps.to_string())),
+                        .unwrap_or_else(|_| panic!("{}", FirewallError::InvalidIps)),
                     IpAddr::from_str(upper_bound)
-                        .unwrap_or_else(|_| panic!("{}", FirewallError::InvalidIps.to_string())),
+                        .unwrap_or_else(|_| panic!("{}", FirewallError::InvalidIps)),
                 );
                 ranges.push(range);
             } else {
                 // individual IP
                 let ip = IpAddr::from_str(part)
-                    .unwrap_or_else(|_| panic!("{}", FirewallError::InvalidIps.to_string()));
+                    .unwrap_or_else(|_| panic!("{}", FirewallError::InvalidIps));
                 ips.push(ip);
             }
         }
@@ -257,15 +259,15 @@ impl FirewallOption {
             FirewallOption::DPORT => Self::Dport(PortCollection::new(value)),
             FirewallOption::ICMPTYPE => Self::IcmpType(
                 u8::from_str(value)
-                    .unwrap_or_else(|_| panic!("{}", FirewallError::InvalidIcmpType.to_string())),
+                    .unwrap_or_else(|_| panic!("{}", FirewallError::InvalidIcmpType)),
             ),
             FirewallOption::PROTO => Self::Proto(
                 u8::from_str(value)
-                    .unwrap_or_else(|_| panic!("{}", FirewallError::InvalidProtocol.to_string())),
+                    .unwrap_or_else(|_| panic!("{}", FirewallError::InvalidProtocol)),
             ),
             FirewallOption::SOURCE => Self::Source(IpCollection::new(value)),
             FirewallOption::SPORT => Self::Sport(PortCollection::new(value)),
-            _ => panic!("{}", FirewallError::UnknownOption.to_string()),
+            _ => panic!("{}", FirewallError::UnknownOption),
         }
     }
 
@@ -333,16 +335,16 @@ impl FirewallRule {
         // rule direction
         let direction_str = parts
             .next()
-            .unwrap_or_else(|| panic!("{}", FirewallError::NotEnoughArguments.to_string()));
+            .unwrap_or_else(|| panic!("{}", FirewallError::NotEnoughArguments));
         let direction = FirewallDirection::from_str(direction_str)
-            .unwrap_or_else(|_| panic!("{}", FirewallError::InvalidDirection.to_string()));
+            .unwrap_or_else(|_| panic!("{}", FirewallError::InvalidDirection));
 
         // rule action
         let action_str = parts
             .next()
-            .unwrap_or_else(|| panic!("{}", FirewallError::NotEnoughArguments.to_string()));
+            .unwrap_or_else(|| panic!("{}", FirewallError::NotEnoughArguments));
         let action = FirewallAction::from_str(action_str)
-            .unwrap_or_else(|_| panic!("{}", FirewallError::InvalidAction.to_string()));
+            .unwrap_or_else(|_| panic!("{}", FirewallError::InvalidAction));
 
         // rule options
         let mut options = Vec::new();
@@ -353,7 +355,7 @@ impl FirewallRule {
                     option_str,
                     parts
                         .next()
-                        .unwrap_or_else(|| panic!("{}", FirewallError::EmptyOption.to_string())),
+                        .unwrap_or_else(|| panic!("{}", FirewallError::EmptyOption)),
                 );
                 options.push(firewall_option);
             } else {
@@ -390,7 +392,8 @@ impl FirewallRule {
         for option in options {
             assert!(
                 options_map.insert(option.to_option_str(), option).is_none(),
-                "{}", FirewallError::DuplicatedOption.to_string()
+                "{}",
+                FirewallError::DuplicatedOption
             );
         }
 
@@ -400,10 +403,10 @@ impl FirewallRule {
         if options_map.contains_key(FirewallOption::ICMPTYPE) {
             match options_map.get(FirewallOption::PROTO) {
                 None => {
-                    panic!("{}", FirewallError::NotApplicableIcmpType.to_string());
+                    panic!("{}", FirewallError::NotApplicableIcmpType);
                 }
                 Some(FirewallOption::Proto(x)) if *x != 1 && *x != 58 => {
-                    panic!("{}", FirewallError::NotApplicableIcmpType.to_string());
+                    panic!("{}", FirewallError::NotApplicableIcmpType);
                 }
                 _ => {}
             }
@@ -479,8 +482,7 @@ impl Firewall {
 
         let mut current_specificity = 0;
         for rule in &self.rules {
-            if rule.matches_packet(packet, &direction) && rule.specificity() >= current_specificity
-            {
+            if rule.matches_packet(packet, direction) && rule.specificity() >= current_specificity {
                 current_specificity = rule.specificity();
                 action = rule.action;
             }
