@@ -124,17 +124,20 @@ impl PortCollection {
             if part.contains(':') {
                 // port range
                 let mut subparts = part.split(':');
-                let range =
-                    RangeInclusive::new(
-                        u16::from_str(subparts.next().unwrap_or_else(|| {
-                            panic!("{}", FirewallError::InvalidPorts.to_string())
-                        }))
+                let (lower_bound, upper_bound) = (
+                    subparts
+                        .next()
+                        .unwrap_or_else(|| panic!("{}", FirewallError::InvalidPorts.to_string())),
+                    subparts
+                        .next()
+                        .unwrap_or_else(|| panic!("{}", FirewallError::InvalidPorts.to_string())),
+                );
+                let range = RangeInclusive::new(
+                    u16::from_str(lower_bound)
                         .unwrap_or_else(|_| panic!("{}", FirewallError::InvalidPorts.to_string())),
-                        u16::from_str(subparts.next().unwrap_or_else(|| {
-                            panic!("{}", FirewallError::InvalidPorts.to_string())
-                        }))
+                    u16::from_str(upper_bound)
                         .unwrap_or_else(|_| panic!("{}", FirewallError::InvalidPorts.to_string())),
-                    );
+                );
                 ranges.push(range);
             } else {
                 // individual port
@@ -177,17 +180,20 @@ impl IpCollection {
             if part.contains('-') {
                 // IP range
                 let mut subparts = part.split('-');
-                let range =
-                    RangeInclusive::new(
-                        IpAddr::from_str(subparts.next().unwrap_or_else(|| {
-                            panic!("{}", FirewallError::InvalidIps.to_string())
-                        }))
+                let (lower_bound, upper_bound) = (
+                    subparts
+                        .next()
+                        .unwrap_or_else(|| panic!("{}", FirewallError::InvalidIps.to_string())),
+                    subparts
+                        .next()
+                        .unwrap_or_else(|| panic!("{}", FirewallError::InvalidIps.to_string())),
+                );
+                let range = RangeInclusive::new(
+                    IpAddr::from_str(lower_bound)
                         .unwrap_or_else(|_| panic!("{}", FirewallError::InvalidIps.to_string())),
-                        IpAddr::from_str(subparts.next().unwrap_or_else(|| {
-                            panic!("{}", FirewallError::InvalidIps.to_string())
-                        }))
+                    IpAddr::from_str(upper_bound)
                         .unwrap_or_else(|_| panic!("{}", FirewallError::InvalidIps.to_string())),
-                    );
+                );
                 ranges.push(range);
             } else {
                 // individual IP
