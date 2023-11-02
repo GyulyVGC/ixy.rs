@@ -27,13 +27,13 @@ impl Display for FirewallDirection {
 }
 
 impl FromStr for FirewallDirection {
-    type Err = FirewallError;
+    type Err = ();
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s {
             "IN" => Ok(Self::In),
             "OUT" => Ok(Self::Out),
-            _ => Err(FirewallError::InvalidDirection),
+            _ => Err(()),
         }
     }
 }
@@ -59,14 +59,14 @@ impl Display for FirewallAction {
 }
 
 impl FromStr for FirewallAction {
-    type Err = FirewallError;
+    type Err = ();
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s {
             "ACCEPT" => Ok(Self::Accept),
             "DENY" => Ok(Self::Deny),
             "REJECT" => Ok(Self::Reject),
-            _ => Err(FirewallError::InvalidAction),
+            _ => Err(()),
         }
     }
 }
