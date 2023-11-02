@@ -390,7 +390,7 @@ impl FirewallRule {
         for option in options {
             assert!(
                 options_map.insert(option.to_option_str(), option).is_none(),
-                panic!("{}", FirewallError::DuplicatedOption.to_string())
+                "{}", FirewallError::DuplicatedOption.to_string()
             );
         }
 
@@ -989,31 +989,31 @@ mod tests {
 
         // tcp packet
         assert_eq!(
-            firewall.determine_action_for_packet(&TCP_PACKET, FirewallDirection::In),
+            firewall.determine_action_for_packet(&TCP_PACKET, &FirewallDirection::In),
             FirewallAction::Accept
         );
         assert_eq!(
-            firewall.determine_action_for_packet(&TCP_PACKET, FirewallDirection::Out),
+            firewall.determine_action_for_packet(&TCP_PACKET, &FirewallDirection::Out),
             FirewallAction::Deny
         );
 
         // icmp packet
         assert_eq!(
-            firewall.determine_action_for_packet(&ICMP_PACKET, FirewallDirection::In),
+            firewall.determine_action_for_packet(&ICMP_PACKET, &FirewallDirection::In),
             FirewallAction::Reject
         );
         assert_eq!(
-            firewall.determine_action_for_packet(&ICMP_PACKET, FirewallDirection::Out),
+            firewall.determine_action_for_packet(&ICMP_PACKET, &FirewallDirection::Out),
             FirewallAction::Reject
         );
 
         // arp packet
         assert_eq!(
-            firewall.determine_action_for_packet(&ARP_PACKET, FirewallDirection::In),
+            firewall.determine_action_for_packet(&ARP_PACKET, &FirewallDirection::In),
             FirewallAction::Accept
         );
         assert_eq!(
-            firewall.determine_action_for_packet(&ARP_PACKET, FirewallDirection::Out),
+            firewall.determine_action_for_packet(&ARP_PACKET, &FirewallDirection::Out),
             FirewallAction::Reject
         );
     }
@@ -1026,31 +1026,31 @@ mod tests {
 
         // tcp packet
         assert_eq!(
-            firewall.determine_action_for_packet(&TCP_PACKET, FirewallDirection::In),
+            firewall.determine_action_for_packet(&TCP_PACKET, &FirewallDirection::In),
             FirewallAction::Deny
         );
         assert_eq!(
-            firewall.determine_action_for_packet(&TCP_PACKET, FirewallDirection::Out),
+            firewall.determine_action_for_packet(&TCP_PACKET, &FirewallDirection::Out),
             FirewallAction::Deny
         );
 
         // icmp packet
         assert_eq!(
-            firewall.determine_action_for_packet(&ICMP_PACKET, FirewallDirection::In),
+            firewall.determine_action_for_packet(&ICMP_PACKET, &FirewallDirection::In),
             FirewallAction::Reject
         );
         assert_eq!(
-            firewall.determine_action_for_packet(&ICMP_PACKET, FirewallDirection::Out),
+            firewall.determine_action_for_packet(&ICMP_PACKET, &FirewallDirection::Out),
             FirewallAction::Accept
         );
 
         // arp packet
         assert_eq!(
-            firewall.determine_action_for_packet(&ARP_PACKET, FirewallDirection::In),
+            firewall.determine_action_for_packet(&ARP_PACKET, &FirewallDirection::In),
             FirewallAction::Deny
         );
         assert_eq!(
-            firewall.determine_action_for_packet(&ARP_PACKET, FirewallDirection::Out),
+            firewall.determine_action_for_packet(&ARP_PACKET, &FirewallDirection::Out),
             FirewallAction::Accept
         );
     }
@@ -1064,31 +1064,31 @@ mod tests {
 
         // tcp packet
         assert_eq!(
-            firewall.determine_action_for_packet(&TCP_PACKET, FirewallDirection::In),
+            firewall.determine_action_for_packet(&TCP_PACKET, &FirewallDirection::In),
             FirewallAction::Accept
         );
         assert_eq!(
-            firewall.determine_action_for_packet(&TCP_PACKET, FirewallDirection::Out),
+            firewall.determine_action_for_packet(&TCP_PACKET, &FirewallDirection::Out),
             FirewallAction::Accept
         );
 
         // icmp packet
         assert_eq!(
-            firewall.determine_action_for_packet(&ICMP_PACKET, FirewallDirection::In),
+            firewall.determine_action_for_packet(&ICMP_PACKET, &FirewallDirection::In),
             FirewallAction::Accept
         );
         assert_eq!(
-            firewall.determine_action_for_packet(&ICMP_PACKET, FirewallDirection::Out),
+            firewall.determine_action_for_packet(&ICMP_PACKET, &FirewallDirection::Out),
             FirewallAction::Accept
         );
 
         // arp packet
         assert_eq!(
-            firewall.determine_action_for_packet(&ARP_PACKET, FirewallDirection::In),
+            firewall.determine_action_for_packet(&ARP_PACKET, &FirewallDirection::In),
             FirewallAction::Accept
         );
         assert_eq!(
-            firewall.determine_action_for_packet(&ARP_PACKET, FirewallDirection::Out),
+            firewall.determine_action_for_packet(&ARP_PACKET, &FirewallDirection::Out),
             FirewallAction::Accept
         );
     }
