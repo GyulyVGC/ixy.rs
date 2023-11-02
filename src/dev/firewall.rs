@@ -72,7 +72,7 @@ impl FromStr for FirewallAction {
 }
 
 #[derive(Debug)]
-pub enum FirewallError {
+enum FirewallError {
     InvalidPorts,
     InvalidIps,
     InvalidIcmpType,
@@ -109,13 +109,13 @@ impl Display for FirewallError {
 }
 
 #[derive(Debug, Eq, PartialEq)]
-pub struct PortCollection {
-    pub ports: Vec<u16>,
-    pub ranges: Vec<RangeInclusive<u16>>,
+struct PortCollection {
+    ports: Vec<u16>,
+    ranges: Vec<RangeInclusive<u16>>,
 }
 
 impl PortCollection {
-    pub fn new(str: &str) -> Self {
+    fn new(str: &str) -> Self {
         let mut ports = Vec::new();
         let mut ranges = Vec::new();
 
@@ -147,7 +147,7 @@ impl PortCollection {
         Self { ports, ranges }
     }
 
-    pub fn contains(&self, port: Option<u16>) -> bool {
+    fn contains(&self, port: Option<u16>) -> bool {
         if let Some(num) = port.as_ref() {
             for range in &self.ranges {
                 if range.contains(num) {
@@ -162,13 +162,13 @@ impl PortCollection {
 }
 
 #[derive(Debug, Eq, PartialEq)]
-pub struct IpCollection {
-    pub ips: Vec<IpAddr>,
-    pub ranges: Vec<RangeInclusive<IpAddr>>,
+struct IpCollection {
+    ips: Vec<IpAddr>,
+    ranges: Vec<RangeInclusive<IpAddr>>,
 }
 
 impl IpCollection {
-    pub fn new(str: &str) -> Self {
+    fn new(str: &str) -> Self {
         let mut ips = Vec::new();
         let mut ranges = Vec::new();
 
@@ -200,7 +200,7 @@ impl IpCollection {
         Self { ips, ranges }
     }
 
-    pub fn contains(&self, ip: Option<IpAddr>) -> bool {
+    fn contains(&self, ip: Option<IpAddr>) -> bool {
         if let Some(addr) = ip.as_ref() {
             for range in &self.ranges {
                 if range.contains(addr) {
@@ -216,7 +216,7 @@ impl IpCollection {
 
 /// Options associated to a specific firewall rule
 #[derive(Debug, Eq, PartialEq)]
-pub enum FirewallOption {
+enum FirewallOption {
     /// Destination IP addresses
     Dest(IpCollection),
     /// Destination ports
@@ -239,7 +239,7 @@ impl FirewallOption {
     const SOURCE: &'static str = "--source";
     const SPORT: &'static str = "--sport";
 
-    pub fn new(option: &str, value: &str) -> Self {
+    fn new(option: &str, value: &str) -> Self {
         match option {
             FirewallOption::DEST => Self::Dest(IpCollection::new(value)),
             FirewallOption::DPORT => Self::Dport(PortCollection::new(value)),
@@ -257,7 +257,7 @@ impl FirewallOption {
         }
     }
 
-    pub fn matches_packet(&self, packet: &[u8]) -> bool {
+    fn matches_packet(&self, packet: &[u8]) -> bool {
         if let Ok(headers) = PacketHeaders::from_ethernet_slice(packet) {
             let ip_header = headers.ip;
             let transport_header = headers.transport;
@@ -292,7 +292,7 @@ impl FirewallOption {
         }
     }
 
-    pub fn to_option_str(&self) -> &str {
+    fn to_option_str(&self) -> &str {
         match self {
             FirewallOption::Dest(_) => FirewallOption::DEST,
             FirewallOption::Dport(_) => FirewallOption::DPORT,
@@ -306,14 +306,14 @@ impl FirewallOption {
 
 /// A firewall rule
 #[derive(Debug, Eq, PartialEq)]
-pub struct FirewallRule {
-    pub direction: FirewallDirection,
-    pub action: FirewallAction,
-    pub options: Vec<FirewallOption>,
+struct FirewallRule {
+    direction: FirewallDirection,
+    action: FirewallAction,
+    options: Vec<FirewallOption>,
 }
 
 impl FirewallRule {
-    pub fn new(rule_str: &str) -> Self {
+    fn new(rule_str: &str) -> Self {
         let mut parts = rule_str.split(' ');
 
         // rule direction
@@ -356,7 +356,7 @@ impl FirewallRule {
         }
     }
 
-    pub fn matches_packet(&self, packet: &[u8], direction: &FirewallDirection) -> bool {
+    fn matches_packet(&self, packet: &[u8], direction: &FirewallDirection) -> bool {
         for option in &self.options {
             if !option.matches_packet(packet) {
                 return false;
@@ -365,11 +365,11 @@ impl FirewallRule {
         self.direction.eq(direction)
     }
 
-    pub fn specificity(&self) -> usize {
+    fn specificity(&self) -> usize {
         self.options.len()
     }
 
-    pub fn validate_options(options: &Vec<FirewallOption>) {
+    fn validate_options(options: &Vec<FirewallOption>) {
         let mut options_map = HashMap::new();
 
         // check there is no duplicate options
@@ -399,10 +399,10 @@ impl FirewallRule {
 /// The firewall of our driver
 #[derive(Debug, Eq, PartialEq)]
 pub struct Firewall {
-    pub rules: Vec<FirewallRule>,
-    pub enabled: bool,
-    pub policy_in: FirewallAction,
-    pub policy_out: FirewallAction,
+    rules: Vec<FirewallRule>,
+    enabled: bool,
+    policy_in: FirewallAction,
+    policy_out: FirewallAction,
 }
 
 impl Default for Firewall {
@@ -431,6 +431,22 @@ impl Firewall {
         }
     }
 
+    pub fn disable(&mut self) {
+        self.enabled = false;
+    }
+
+    pub fn enable(&mut self) {
+        self.enabled = true;
+    }
+
+    pub fn set_policy_in(&mut self, policy: FirewallAction) {
+        self.policy_in = policy;
+    }
+
+    pub fn set_policy_out(&mut self, policy: FirewallAction) {
+        self.policy_out = policy;
+    }
+
     pub fn determine_action_for_packet(
         &self,
         packet: &[u8],
@@ -454,22 +470,6 @@ impl Firewall {
             }
         }
         action
-    }
-
-    pub fn disable(&mut self) {
-        self.enabled = false;
-    }
-
-    pub fn enable(&mut self) {
-        self.enabled = true;
-    }
-
-    pub fn set_policy_in(&mut self, policy: FirewallAction) {
-        self.policy_in = policy;
-    }
-
-    pub fn set_policy_out(&mut self, policy: FirewallAction) {
-        self.policy_out = policy;
     }
 }
 
