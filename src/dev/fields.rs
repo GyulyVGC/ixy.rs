@@ -77,7 +77,7 @@ mod tests {
     use crate::dev::fields::{
         get_dest, get_dport, get_icmp_type, get_proto, get_source, get_sport,
     };
-    use crate::dev::raw_packets::{ARP_PACKET, ICMP_PACKET, TCP_PACKET};
+    use crate::dev::raw_packets::{ARP_PACKET, ICMP_PACKET, TCP_PACKET, UDP_IPV6_PACKET};
     use etherparse::PacketHeaders;
     use std::net::IpAddr;
     use std::str::FromStr;
@@ -131,5 +131,24 @@ mod tests {
         assert_eq!(get_icmp_type(transport_header.clone()), None);
         assert_eq!(get_sport(transport_header.clone()), None);
         assert_eq!(get_dport(transport_header), None);
+    }
+
+    #[test]
+    fn test_udp_ipv6_packet_fields() {
+        let headers = PacketHeaders::from_ethernet_slice(&UDP_IPV6_PACKET).unwrap();
+        let ip_header = headers.ip;
+        let transport_header = headers.transport;
+        assert_eq!(get_proto(ip_header.clone()), Some(17)); // udp
+        assert_eq!(
+            get_source(ip_header.clone()),
+            Some(IpAddr::from_str("3ffe:501:4819::42").unwrap())
+        );
+        assert_eq!(
+            get_dest(ip_header),
+            Some(IpAddr::from_str("3ffe:507:0:1:200:86ff:fe05:80da").unwrap())
+        );
+        assert_eq!(get_icmp_type(transport_header.clone()), None);
+        assert_eq!(get_sport(transport_header.clone()), Some(53));
+        assert_eq!(get_dport(transport_header), Some(2396));
     }
 }
