@@ -1,6 +1,7 @@
 use crate::dev::fields::{get_dest, get_dport, get_icmp_type, get_proto, get_source, get_sport};
 use etherparse::PacketHeaders;
 use std::collections::HashMap;
+use std::error::Error;
 use std::fmt::{Display, Formatter};
 use std::fs::File;
 use std::io::{BufRead, BufReader};
@@ -28,13 +29,13 @@ impl Display for FirewallDirection {
 }
 
 impl FromStr for FirewallDirection {
-    type Err = ();
+    type Err = FirewallError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s {
             "IN" => Ok(Self::In),
             "OUT" => Ok(Self::Out),
-            _ => Err(()),
+            _ => Err(FirewallError::InvalidDirection),
         }
     }
 }
@@ -61,14 +62,14 @@ impl Display for FirewallAction {
 }
 
 impl FromStr for FirewallAction {
-    type Err = ();
+    type Err = FirewallError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s {
             "ACCEPT" => Ok(Self::Accept),
             "DENY" => Ok(Self::Deny),
             "REJECT" => Ok(Self::Reject),
-            _ => Err(()),
+            _ => Err(FirewallError::InvalidAction),
         }
     }
 }
@@ -120,7 +121,7 @@ impl PortCollection {
     const SEPARATOR: char = ',';
     const RANGE_SEPARATOR: char = ':';
 
-    fn new(str: &str) -> Self {
+    fn new(str: &str) -> Result<Self, FirewallError> {
         let mut ports = Vec::new();
         let mut ranges = Vec::new();
 
@@ -130,29 +131,22 @@ impl PortCollection {
                 // port range
                 let mut subparts = part.split(Self::RANGE_SEPARATOR);
                 let (lower_bound, upper_bound) = (
-                    subparts
-                        .next()
-                        .unwrap_or_else(|| panic!("{}", FirewallError::InvalidPorts)),
-                    subparts
-                        .next()
-                        .unwrap_or_else(|| panic!("{}", FirewallError::InvalidPorts)),
+                    subparts.next().ok_or(FirewallError::InvalidPorts)?,
+                    subparts.next().ok_or(FirewallError::InvalidPorts)?,
                 );
                 let range = RangeInclusive::new(
-                    u16::from_str(lower_bound)
-                        .unwrap_or_else(|_| panic!("{}", FirewallError::InvalidPorts)),
-                    u16::from_str(upper_bound)
-                        .unwrap_or_else(|_| panic!("{}", FirewallError::InvalidPorts)),
+                    u16::from_str(lower_bound).map_err(|_| FirewallError::InvalidPorts)?,
+                    u16::from_str(upper_bound).map_err(|_| FirewallError::InvalidPorts)?,
                 );
                 ranges.push(range);
             } else {
                 // individual port
-                let port = u16::from_str(part)
-                    .unwrap_or_else(|_| panic!("{}", FirewallError::InvalidPorts));
+                let port = u16::from_str(part).map_err(|_| FirewallError::InvalidPorts)?;
                 ports.push(port);
             }
         }
 
-        Self { ports, ranges }
+        Ok(Self { ports, ranges })
     }
 
     fn contains(&self, port: Option<u16>) -> bool {
@@ -179,7 +173,7 @@ impl IpCollection {
     const SEPARATOR: char = ',';
     const RANGE_SEPARATOR: char = '-';
 
-    fn new(str: &str) -> Self {
+    fn new(str: &str) -> Result<Self, FirewallError> {
         let mut ips = Vec::new();
         let mut ranges = Vec::new();
 
@@ -189,29 +183,22 @@ impl IpCollection {
                 // IP range
                 let mut subparts = part.split(Self::RANGE_SEPARATOR);
                 let (lower_bound, upper_bound) = (
-                    subparts
-                        .next()
-                        .unwrap_or_else(|| panic!("{}", FirewallError::InvalidIps)),
-                    subparts
-                        .next()
-                        .unwrap_or_else(|| panic!("{}", FirewallError::InvalidIps)),
+                    subparts.next().ok_or_else(|| FirewallError::InvalidIps)?,
+                    subparts.next().ok_or_else(|| FirewallError::InvalidIps)?,
                 );
                 let range = RangeInclusive::new(
-                    IpAddr::from_str(lower_bound)
-                        .unwrap_or_else(|_| panic!("{}", FirewallError::InvalidIps)),
-                    IpAddr::from_str(upper_bound)
-                        .unwrap_or_else(|_| panic!("{}", FirewallError::InvalidIps)),
+                    IpAddr::from_str(lower_bound).map_err(|_| FirewallError::InvalidIps)?,
+                    IpAddr::from_str(upper_bound).map_err(|_| FirewallError::InvalidIps)?,
                 );
                 ranges.push(range);
             } else {
                 // individual IP
-                let ip = IpAddr::from_str(part)
-                    .unwrap_or_else(|_| panic!("{}", FirewallError::InvalidIps));
+                let ip = IpAddr::from_str(part).map_err(|_| FirewallError::InvalidIps)?;
                 ips.push(ip);
             }
         }
 
-        Self { ips, ranges }
+        Ok(Self { ips, ranges })
     }
 
     fn contains(&self, ip: Option<IpAddr>) -> bool {
@@ -253,22 +240,20 @@ impl FirewallOption {
     const SOURCE: &'static str = "--source";
     const SPORT: &'static str = "--sport";
 
-    fn new(option: &str, value: &str) -> Self {
-        match option {
-            FirewallOption::DEST => Self::Dest(IpCollection::new(value)),
-            FirewallOption::DPORT => Self::Dport(PortCollection::new(value)),
-            FirewallOption::ICMPTYPE => Self::IcmpType(
-                u8::from_str(value)
-                    .unwrap_or_else(|_| panic!("{}", FirewallError::InvalidIcmpType)),
-            ),
-            FirewallOption::PROTO => Self::Proto(
-                u8::from_str(value)
-                    .unwrap_or_else(|_| panic!("{}", FirewallError::InvalidProtocol)),
-            ),
-            FirewallOption::SOURCE => Self::Source(IpCollection::new(value)),
-            FirewallOption::SPORT => Self::Sport(PortCollection::new(value)),
-            _ => panic!("{}", FirewallError::UnknownOption),
-        }
+    fn new(option: &str, value: &str) -> Result<Self, FirewallError> {
+        Ok(match option {
+            FirewallOption::DEST => Self::Dest(IpCollection::new(value)?),
+            FirewallOption::DPORT => Self::Dport(PortCollection::new(value)?),
+            FirewallOption::ICMPTYPE => {
+                Self::IcmpType(u8::from_str(value).map_err(|_| FirewallError::InvalidIcmpType)?)
+            }
+            FirewallOption::PROTO => {
+                Self::Proto(u8::from_str(value).map_err(|_| FirewallError::InvalidProtocol)?)
+            }
+            FirewallOption::SOURCE => Self::Source(IpCollection::new(value)?),
+            FirewallOption::SPORT => Self::Sport(PortCollection::new(value)?),
+            _ => return Err(FirewallError::UnknownOption),
+        })
     }
 
     fn matches_packet(&self, packet: &[u8]) -> bool {
@@ -329,22 +314,16 @@ struct FirewallRule {
 impl FirewallRule {
     const SEPARATOR: char = ' ';
 
-    fn new(rule_str: &str) -> Self {
+    fn new(rule_str: &str) -> Result<Self, FirewallError> {
         let mut parts = rule_str.split(Self::SEPARATOR);
 
         // rule direction
-        let direction_str = parts
-            .next()
-            .unwrap_or_else(|| panic!("{}", FirewallError::NotEnoughArguments));
-        let direction = FirewallDirection::from_str(direction_str)
-            .unwrap_or_else(|_| panic!("{}", FirewallError::InvalidDirection));
+        let direction_str = parts.next().ok_or(FirewallError::NotEnoughArguments)?;
+        let direction = FirewallDirection::from_str(direction_str)?;
 
         // rule action
-        let action_str = parts
-            .next()
-            .unwrap_or_else(|| panic!("{}", FirewallError::NotEnoughArguments));
-        let action = FirewallAction::from_str(action_str)
-            .unwrap_or_else(|_| panic!("{}", FirewallError::InvalidAction));
+        let action_str = parts.next().ok_or(FirewallError::NotEnoughArguments)?;
+        let action = FirewallAction::from_str(action_str)?;
 
         // rule options
         let mut options = Vec::new();
@@ -353,23 +332,21 @@ impl FirewallRule {
             if let Some(option_str) = option {
                 let firewall_option = FirewallOption::new(
                     option_str,
-                    parts
-                        .next()
-                        .unwrap_or_else(|| panic!("{}", FirewallError::EmptyOption)),
-                );
+                    parts.next().ok_or(FirewallError::EmptyOption)?,
+                )?;
                 options.push(firewall_option);
             } else {
                 break;
             }
         }
 
-        FirewallRule::validate_options(&options);
+        FirewallRule::validate_options(&options)?;
 
-        Self {
+        Ok(Self {
             direction,
             action,
             options,
-        }
+        })
     }
 
     fn matches_packet(&self, packet: &[u8], direction: &FirewallDirection) -> bool {
@@ -385,16 +362,14 @@ impl FirewallRule {
         self.options.len()
     }
 
-    fn validate_options(options: &Vec<FirewallOption>) {
+    fn validate_options(options: &Vec<FirewallOption>) -> Result<(), FirewallError> {
         let mut options_map = HashMap::new();
 
         // check there is no duplicate options
         for option in options {
-            assert!(
-                options_map.insert(option.to_option_str(), option).is_none(),
-                "{}",
-                FirewallError::DuplicatedOption
-            );
+            if options_map.insert(option.to_option_str(), option).is_some() {
+                return Err(FirewallError::DuplicatedOption);
+            }
         }
 
         // if --icmp-type option is present, --proto 1 || --proto 58 must also be present
@@ -403,14 +378,16 @@ impl FirewallRule {
         if options_map.contains_key(FirewallOption::ICMPTYPE) {
             match options_map.get(FirewallOption::PROTO) {
                 None => {
-                    panic!("{}", FirewallError::NotApplicableIcmpType);
+                    return Err(FirewallError::NotApplicableIcmpType);
                 }
                 Some(FirewallOption::Proto(x)) if *x != 1 && *x != 58 => {
-                    panic!("{}", FirewallError::NotApplicableIcmpType);
+                    return Err(FirewallError::NotApplicableIcmpType);
                 }
                 _ => {}
             }
         }
+
+        Ok(())
     }
 }
 
@@ -436,18 +413,19 @@ pub struct Firewall {
 // }
 
 impl Firewall {
-    pub fn new(file_path: &str) -> Self {
+    pub fn new(file_path: &str) -> Result<Self, FirewallError> {
         let mut rules = Vec::new();
         let file = File::open(file_path).unwrap();
         for firewall_rule_str in BufReader::new(file).lines().flatten() {
-            rules.push(FirewallRule::new(&firewall_rule_str));
+            rules.push(FirewallRule::new(&firewall_rule_str)?);
         }
-        Self {
+
+        Ok(Self {
             rules,
             enabled: true,
             policy_in: FirewallAction::default(),
             policy_out: FirewallAction::default(),
-        }
+        })
     }
 
     pub fn disable(&mut self) {
