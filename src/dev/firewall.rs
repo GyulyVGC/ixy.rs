@@ -249,10 +249,10 @@ impl FirewallOption {
                 FirewallError::InvalidDportValue,
             )?),
             FirewallOption::ICMPTYPE => {
-                Self::IcmpType(u8::from_str(value).map_err(|_| FirewallError::InvalidIcmpType)?)
+                Self::IcmpType(u8::from_str(value).map_err(|_| FirewallError::InvalidIcmpTypeValue)?)
             }
             FirewallOption::PROTO => {
-                Self::Proto(u8::from_str(value).map_err(|_| FirewallError::InvalidProtocol)?)
+                Self::Proto(u8::from_str(value).map_err(|_| FirewallError::InvalidProtocolValue)?)
             }
             FirewallOption::SOURCE => {
                 Self::Source(IpCollection::new(value, FirewallError::InvalidSourceValue)?)
