@@ -73,8 +73,8 @@ impl FromStr for FirewallAction {
     }
 }
 
-#[derive(Debug)]
-enum FirewallError {
+#[derive(Debug, Eq, PartialEq)]
+pub enum FirewallError {
     InvalidPorts,
     InvalidIps,
     InvalidIcmpType,
@@ -798,7 +798,7 @@ mod tests {
             Err(FirewallError::InvalidDirection)
         );
 
-        assert!(
+        assert_eq!(
             FirewallRule::new("OUT PUTAWAY --source 8.8.8.8,7.7.7.7 --dport 900:1000,1,2,3"),
             Err(FirewallError::InvalidAction)
         );
