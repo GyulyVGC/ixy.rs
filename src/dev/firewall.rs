@@ -503,6 +503,10 @@ mod tests {
     use std::ops::RangeInclusive;
     use std::str::FromStr;
 
+    const TEST_FILE_1: &str = "./examples/firewall_for_tests_1.txt";
+    const TEST_FILE_2: &str = "./examples/firewall_for_tests_2.txt";
+    const TEST_FILE_3: &str = "./examples/firewall_for_tests_3.txt";
+
     #[test]
     fn test_new_port_collections() {
         assert_eq!(
@@ -1065,10 +1069,7 @@ mod tests {
             policy_out: FirewallAction::default(),
         };
 
-        assert_eq!(
-            Firewall::new("./examples/firewall_for_tests_1.txt"),
-            firewall
-        );
+        assert_eq!(Firewall::new(TEST_FILE_1), firewall);
 
         firewall.disable();
         firewall.set_policy_in(FirewallAction::Deny);
@@ -1080,7 +1081,7 @@ mod tests {
 
     #[test]
     fn test_determine_action_for_packet_1() {
-        let firewall = Firewall::new("./examples/firewall_for_tests_1.txt");
+        let firewall = Firewall::new(TEST_FILE_1);
 
         // tcp packet
         assert_eq!(
@@ -1115,7 +1116,7 @@ mod tests {
 
     #[test]
     fn test_determine_action_for_packet_2() {
-        let mut firewall = Firewall::new("./examples/firewall_for_tests_2.txt");
+        let mut firewall = Firewall::new(TEST_FILE_2);
         firewall.set_policy_in(FirewallAction::Deny);
         firewall.set_policy_out(FirewallAction::Accept);
 
@@ -1152,7 +1153,7 @@ mod tests {
 
     #[test]
     fn test_determine_action_for_packet_3() {
-        let mut firewall = Firewall::new("./examples/firewall_for_tests_3.txt");
+        let mut firewall = Firewall::new(TEST_FILE_3);
 
         // ipv6 packet
         assert_eq!(
@@ -1167,7 +1168,7 @@ mod tests {
 
     #[test]
     fn test_determine_action_for_packet_with_firewall_disabled() {
-        let mut firewall = Firewall::new("./examples/firewall_for_tests_1.txt");
+        let mut firewall = Firewall::new(TEST_FILE_1);
         firewall.set_policy_in(FirewallAction::Reject); // doesn't matter
         firewall.set_policy_out(FirewallAction::Reject); // doesn't matter
         firewall.disable(); // always accept
