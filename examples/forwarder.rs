@@ -63,7 +63,7 @@ fn transmit(pci_addr: String) {
     let mut dev = ixy_init(&pci_addr, 1, 1, 0).unwrap();
 
     // set custom firewall rules for the device (read from a file)
-    dev.set_firewall(Firewall::new("./examples/firewall.txt"));
+    dev.set_firewall(Firewall::new("./examples/firewall.txt").unwrap());
 
     // packet to send
     #[rustfmt::skip]
@@ -134,7 +134,7 @@ fn receive(pci_addr: String) {
     let mut dev = ixy_init(&pci_addr, 1, 1, 0).unwrap();
 
     // set custom firewall rules for the device (read from a file)
-    dev.set_firewall(Firewall::new("./examples/firewall.txt"));
+    dev.set_firewall(Firewall::new("./examples/firewall.txt").unwrap());
 
     loop {
         // wait 0.5 second before receiving other packets, to not poll unnecessarily

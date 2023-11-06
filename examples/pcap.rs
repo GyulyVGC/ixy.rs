@@ -50,7 +50,7 @@ pub fn main() -> Result<(), io::Error> {
     let mut dev = ixy_init(&pci_addr, 1, 1, 0).unwrap();
 
     // set custom firewall rules for the device (read from a file)
-    dev.set_firewall(Firewall::new("./examples/firewall.txt"));
+    dev.set_firewall(Firewall::new("./examples/firewall.txt").unwrap());
 
     println!("MAC address: {:02X?}", dev.get_mac_addr());
 
