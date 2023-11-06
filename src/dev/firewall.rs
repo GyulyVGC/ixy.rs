@@ -124,11 +124,11 @@ impl PortCollection {
         let mut ports = Vec::new();
         let mut ranges = Vec::new();
 
-        let parts: Vec<&str> = str.split(PortCollection::SEPARATOR).collect();
+        let parts: Vec<&str> = str.split(Self::SEPARATOR).collect();
         for part in parts {
-            if part.contains(PortCollection::RANGE_SEPARATOR) {
+            if part.contains(Self::RANGE_SEPARATOR) {
                 // port range
-                let mut subparts = part.split(PortCollection::RANGE_SEPARATOR);
+                let mut subparts = part.split(Self::RANGE_SEPARATOR);
                 let (lower_bound, upper_bound) = (
                     subparts
                         .next()
@@ -183,11 +183,11 @@ impl IpCollection {
         let mut ips = Vec::new();
         let mut ranges = Vec::new();
 
-        let parts: Vec<&str> = str.split(IpCollection::SEPARATOR).collect();
+        let parts: Vec<&str> = str.split(Self::SEPARATOR).collect();
         for part in parts {
-            if part.contains(IpCollection::RANGE_SEPARATOR) {
+            if part.contains(Self::RANGE_SEPARATOR) {
                 // IP range
-                let mut subparts = part.split(IpCollection::RANGE_SEPARATOR);
+                let mut subparts = part.split(Self::RANGE_SEPARATOR);
                 let (lower_bound, upper_bound) = (
                     subparts
                         .next()
@@ -330,7 +330,7 @@ impl FirewallRule {
     const SEPARATOR: char = ' ';
 
     fn new(rule_str: &str) -> Self {
-        let mut parts = rule_str.split(FirewallRule::SEPARATOR);
+        let mut parts = rule_str.split(Self::SEPARATOR);
 
         // rule direction
         let direction_str = parts
@@ -873,17 +873,17 @@ mod tests {
 
     #[test]
     fn test_options_match_ipv6() {
-        let dest_ok = FirewallOption::new("--dest", "3ffe:507:0:1:200:86ff:fe05:80da");
+        let dest_ok = FirewallOption::new("--dest", "3ffe:507:0:1:200:86ff:fe05:8da");
         let dest_ko = FirewallOption::new("--dest", "3ffe:501:4819::42");
-        let source_ko = FirewallOption::new("--source", "3ffe:507:0:1:200:86ff:fe05:80da");
+        let source_ko = FirewallOption::new("--source", "3ffe:507:0:1:200:86ff:fe05:8da");
         let source_ok = FirewallOption::new("--source", "3ffe:501:4819::42");
         let range_dest_ok = FirewallOption::new(
             "--dest",
-            "3ffe:507:0:1:200:86ff:fe05:8000-3ffe:507:0:1:200:86ff:fe05:8100",
+            "3ffe:507:0:1:200:86ff:fe05:800-3ffe:507:0:1:200:86ff:fe05:900",
         );
         let range_dest_ko = FirewallOption::new(
             "--dest",
-            "3ffe:507:0:1:200:86ff:fe05:8000-3ffe:507:0:1:200:86ff:fe05:80d5",
+            "3ffe:507:0:1:200:86ff:fe05:800-3ffe:507:0:1:200:86ff:fe05:8bf",
         );
         let range_source_ok =
             FirewallOption::new("--source", "3ffe:501:4819::35-3ffe:501:4819::45");
@@ -1010,20 +1010,20 @@ mod tests {
         assert!(!rule_2.matches_packet(&UDP_IPV6_PACKET, &FirewallDirection::Out));
         assert!(rule_2.matches_packet(&UDP_IPV6_PACKET, &FirewallDirection::In));
         let rule_3_ok_out =
-            FirewallRule::new("OUT REJECT --dest 3ffe:507:0:1:200:86ff:fe05:80da --proto 17");
+            FirewallRule::new("OUT REJECT --dest 3ffe:507:0:1:200:86ff:fe05:8da --proto 17");
         assert!(rule_3_ok_out.matches_packet(&UDP_IPV6_PACKET, &FirewallDirection::Out));
         assert!(!rule_3_ok_out.matches_packet(&UDP_IPV6_PACKET, &FirewallDirection::In));
         let rule_4_ok_in =
-            FirewallRule::new("IN REJECT --dest 3ffe:507:0:1:200:86ff:fe05:80da --proto 17");
+            FirewallRule::new("IN REJECT --dest 3ffe:507:0:1:200:86ff:fe05:8da --proto 17");
         assert!(!rule_4_ok_in.matches_packet(&UDP_IPV6_PACKET, &FirewallDirection::Out));
         assert!(rule_4_ok_in.matches_packet(&UDP_IPV6_PACKET, &FirewallDirection::In));
         let rule_5_ok_out = FirewallRule::new(
-            "OUT ACCEPT --dest 3ffe:507:0:1:200:86ff:fe05:80da --proto 17 --sport 545:560,43,53",
+            "OUT ACCEPT --dest 3ffe:507:0:1:200:86ff:fe05:8da --proto 17 --sport 545:560,43,53",
         );
         assert!(rule_5_ok_out.matches_packet(&UDP_IPV6_PACKET, &FirewallDirection::Out));
         assert!(!rule_5_ok_out.matches_packet(&UDP_IPV6_PACKET, &FirewallDirection::In));
         let rule_6_ko = FirewallRule::new(
-            "OUT ACCEPT --dest 3ffe:507:0:1:200:86ff:fe05:80da --proto 17 --sport 545:560,43,52",
+            "OUT ACCEPT --dest 3ffe:507:0:1:200:86ff:fe05:8da --proto 17 --sport 545:560,43,52",
         );
         assert!(!rule_6_ko.matches_packet(&UDP_IPV6_PACKET, &FirewallDirection::Out));
         assert!(!rule_6_ko.matches_packet(&UDP_IPV6_PACKET, &FirewallDirection::In));
@@ -1153,7 +1153,7 @@ mod tests {
 
     #[test]
     fn test_determine_action_for_packet_3() {
-        let mut firewall = Firewall::new(TEST_FILE_3);
+        let firewall = Firewall::new(TEST_FILE_3);
 
         // ipv6 packet
         assert_eq!(

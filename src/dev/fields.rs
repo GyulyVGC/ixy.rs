@@ -145,7 +145,7 @@ mod tests {
         );
         assert_eq!(
             get_dest(ip_header),
-            Some(IpAddr::from_str("3ffe:507:0:1:200:86ff:fe05:80da").unwrap())
+            Some(IpAddr::from_str("3ffe:507:0:1:200:86ff:fe05:8da").unwrap())
         );
         assert_eq!(get_icmp_type(transport_header.clone()), None);
         assert_eq!(get_sport(transport_header.clone()), Some(53));
