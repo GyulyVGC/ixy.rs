@@ -497,7 +497,7 @@ mod tests {
         FirewallAction, FirewallDirection, FirewallOption, FirewallRule, IpCollection,
         PortCollection,
     };
-    use crate::dev::raw_packets::{ARP_PACKET, ICMP_PACKET, TCP_PACKET};
+    use crate::dev::raw_packets::{ARP_PACKET, ICMP_PACKET, TCP_PACKET, UDP_IPV6_PACKET};
     use crate::Firewall;
     use std::net::IpAddr;
     use std::ops::RangeInclusive;
@@ -868,6 +868,63 @@ mod tests {
     }
 
     #[test]
+    fn test_options_match_ipv6() {
+        let dest_ok = FirewallOption::new("--dest", "3ffe:507:0:1:200:86ff:fe05:80da");
+        let dest_ko = FirewallOption::new("--dest", "3ffe:501:4819::42");
+        let source_ko = FirewallOption::new("--source", "3ffe:507:0:1:200:86ff:fe05:80da");
+        let source_ok = FirewallOption::new("--source", "3ffe:501:4819::42");
+        let range_dest_ok = FirewallOption::new(
+            "--dest",
+            "3ffe:507:0:1:200:86ff:fe05:8000-3ffe:507:0:1:200:86ff:fe05:8100",
+        );
+        let range_dest_ko = FirewallOption::new(
+            "--dest",
+            "3ffe:507:0:1:200:86ff:fe05:8000-3ffe:507:0:1:200:86ff:fe05:80d5",
+        );
+        let range_source_ok =
+            FirewallOption::new("--source", "3ffe:501:4819::35-3ffe:501:4819::45");
+        let range_source_ok_2 = FirewallOption::new(
+            "--source",
+            "3ffe:501:4819::31-3ffe:501:4819::41,3ffe:501:4819::42",
+        );
+        let range_source_ko =
+            FirewallOption::new("--source", "3ffe:501:4819::31-3ffe:501:4819::41");
+        let dport_ok = FirewallOption::new("--dport", "2396");
+        let dport_ko = FirewallOption::new("--dport", "3296");
+        let range_dport_ok = FirewallOption::new("--dport", "2000:2500");
+        let range_dport_ko = FirewallOption::new("--dport", "53:63");
+        let sport_ok = FirewallOption::new("--sport", "53");
+        let sport_ko = FirewallOption::new("--sport", "55");
+        let range_sport_ok = FirewallOption::new("--sport", "53:63");
+        let range_sport_ko = FirewallOption::new("--sport", "2000:2500");
+        let icmp_type = FirewallOption::new("--icmp-type", "8");
+        let proto_ok = FirewallOption::new("--proto", "17");
+        let proto_ko = FirewallOption::new("--proto", "18");
+
+        // ipv6 packet
+        assert!(dest_ok.matches_packet(&UDP_IPV6_PACKET));
+        assert!(!dest_ko.matches_packet(&UDP_IPV6_PACKET));
+        assert!(!source_ko.matches_packet(&UDP_IPV6_PACKET));
+        assert!(source_ok.matches_packet(&UDP_IPV6_PACKET));
+        assert!(range_dest_ok.matches_packet(&UDP_IPV6_PACKET));
+        assert!(!range_dest_ko.matches_packet(&UDP_IPV6_PACKET));
+        assert!(range_source_ok.matches_packet(&UDP_IPV6_PACKET));
+        assert!(range_source_ok_2.matches_packet(&UDP_IPV6_PACKET));
+        assert!(!range_source_ko.matches_packet(&UDP_IPV6_PACKET));
+        assert!(dport_ok.matches_packet(&UDP_IPV6_PACKET));
+        assert!(!dport_ko.matches_packet(&UDP_IPV6_PACKET));
+        assert!(range_dport_ok.matches_packet(&UDP_IPV6_PACKET));
+        assert!(!range_dport_ko.matches_packet(&UDP_IPV6_PACKET));
+        assert!(sport_ok.matches_packet(&UDP_IPV6_PACKET));
+        assert!(!sport_ko.matches_packet(&UDP_IPV6_PACKET));
+        assert!(range_sport_ok.matches_packet(&UDP_IPV6_PACKET));
+        assert!(!range_sport_ko.matches_packet(&UDP_IPV6_PACKET));
+        assert!(!icmp_type.matches_packet(&UDP_IPV6_PACKET));
+        assert!(proto_ok.matches_packet(&UDP_IPV6_PACKET));
+        assert!(!proto_ko.matches_packet(&UDP_IPV6_PACKET));
+    }
+
+    #[test]
     fn test_rules_match_packets() {
         let rule_1 = FirewallRule::new("OUT DENY");
         assert!(rule_1.matches_packet(&TCP_PACKET, &FirewallDirection::Out));
@@ -938,6 +995,42 @@ mod tests {
         assert!(!rule_13_ko.matches_packet(&TCP_PACKET, &FirewallDirection::In));
         assert!(rule_13_ko.matches_packet(&ICMP_PACKET, &FirewallDirection::Out));
         assert!(!rule_13_ko.matches_packet(&ICMP_PACKET, &FirewallDirection::In));
+    }
+
+    #[test]
+    fn test_rules_match_ipv6() {
+        let rule_1 = FirewallRule::new("OUT DENY");
+        assert!(rule_1.matches_packet(&UDP_IPV6_PACKET, &FirewallDirection::Out));
+        assert!(!rule_1.matches_packet(&UDP_IPV6_PACKET, &FirewallDirection::In));
+        let rule_2 = FirewallRule::new("IN DENY");
+        assert!(!rule_2.matches_packet(&UDP_IPV6_PACKET, &FirewallDirection::Out));
+        assert!(rule_2.matches_packet(&UDP_IPV6_PACKET, &FirewallDirection::In));
+        let rule_3_ok_out =
+            FirewallRule::new("OUT REJECT --dest 3ffe:507:0:1:200:86ff:fe05:80da --proto 17");
+        assert!(rule_3_ok_out.matches_packet(&UDP_IPV6_PACKET, &FirewallDirection::Out));
+        assert!(!rule_3_ok_out.matches_packet(&UDP_IPV6_PACKET, &FirewallDirection::In));
+        let rule_4_ok_in =
+            FirewallRule::new("IN REJECT --dest 3ffe:507:0:1:200:86ff:fe05:80da --proto 17");
+        assert!(!rule_4_ok_in.matches_packet(&UDP_IPV6_PACKET, &FirewallDirection::Out));
+        assert!(rule_4_ok_in.matches_packet(&UDP_IPV6_PACKET, &FirewallDirection::In));
+        let rule_5_ok_out = FirewallRule::new(
+            "OUT ACCEPT --dest 3ffe:507:0:1:200:86ff:fe05:80da --proto 17 --sport 545:560,43,53",
+        );
+        assert!(rule_5_ok_out.matches_packet(&UDP_IPV6_PACKET, &FirewallDirection::Out));
+        assert!(!rule_5_ok_out.matches_packet(&UDP_IPV6_PACKET, &FirewallDirection::In));
+        let rule_6_ko = FirewallRule::new(
+            "OUT ACCEPT --dest 3ffe:507:0:1:200:86ff:fe05:80da --proto 17 --sport 545:560,43,52",
+        );
+        assert!(!rule_6_ko.matches_packet(&UDP_IPV6_PACKET, &FirewallDirection::Out));
+        assert!(!rule_6_ko.matches_packet(&UDP_IPV6_PACKET, &FirewallDirection::In));
+        let rule_9_ok_in =
+            FirewallRule::new("IN ACCEPT --source 3ffe:501:4819::42,3ffe:501:4819::49");
+        assert!(!rule_9_ok_in.matches_packet(&UDP_IPV6_PACKET, &FirewallDirection::Out));
+        assert!(rule_9_ok_in.matches_packet(&UDP_IPV6_PACKET, &FirewallDirection::In));
+        let rule_10_ko =
+            FirewallRule::new("IN ACCEPT --source 3ffe:501:4819::47,3ffe:501:4819::49");
+        assert!(!rule_10_ko.matches_packet(&UDP_IPV6_PACKET, &FirewallDirection::Out));
+        assert!(!rule_10_ko.matches_packet(&UDP_IPV6_PACKET, &FirewallDirection::In));
     }
 
     /// File is placed in examples/firewall_for_tests_1.txt and its content is the following:
@@ -1054,6 +1147,21 @@ mod tests {
         assert_eq!(
             firewall.determine_action_for_packet(&ARP_PACKET, &FirewallDirection::Out),
             FirewallAction::Accept
+        );
+    }
+
+    #[test]
+    fn test_determine_action_for_packet_3() {
+        let mut firewall = Firewall::new("./examples/firewall_for_tests_3.txt");
+
+        // ipv6 packet
+        assert_eq!(
+            firewall.determine_action_for_packet(&UDP_IPV6_PACKET, &FirewallDirection::In),
+            FirewallAction::Reject
+        );
+        assert_eq!(
+            firewall.determine_action_for_packet(&UDP_IPV6_PACKET, &FirewallDirection::Out),
+            FirewallAction::Deny
         );
     }
 
