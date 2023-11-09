@@ -1,3 +1,4 @@
+use nullnet_firewall::{Firewall, FirewallAction, FirewallDirection};
 use std::collections::VecDeque;
 use std::error::Error;
 use std::fs::File;
@@ -9,7 +10,6 @@ use std::sync::atomic::{self, Ordering};
 use std::time::Duration;
 use std::{io, mem, slice, thread};
 
-use crate::dev::firewall::{Firewall, FirewallAction, FirewallDirection};
 use crate::dev::sniffer::print_packet_info;
 use crate::memory;
 use crate::memory::{Dma, Packet, PACKET_HEADROOM};
@@ -129,14 +129,14 @@ impl IxyDevice for VirtioDevice {
             // MATCH AGAINST FIREWALL RULES
             let action = self
                 .firewall
-                .determine_action_for_packet(&buf[..], &FirewallDirection::In);
+                .resolve_packet(&buf[..], &FirewallDirection::IN);
 
             // SNIFF PACKETS
-            print_packet_info(&buf[..], &FirewallDirection::In, action);
+            print_packet_info(&buf[..], &FirewallDirection::IN, action);
 
             ////////////////////////////////////////////////////////////////////////////////////////
 
-            if action.eq(&FirewallAction::Accept) {
+            if action.eq(&FirewallAction::ACCEPT) {
                 self.rx_bytes += buf.len as u64;
                 self.rx_pkts += 1;
                 buffer.push_back(buf);
@@ -203,12 +203,12 @@ impl IxyDevice for VirtioDevice {
             // MATCH AGAINST FIREWALL RULES
             let action = self
                 .firewall
-                .determine_action_for_packet(&packet[..], &FirewallDirection::Out);
+                .resolve_packet(&packet[..], &FirewallDirection::OUT);
 
             // SNIFF PACKETS
-            print_packet_info(&packet[..], &FirewallDirection::Out, action);
+            print_packet_info(&packet[..], &FirewallDirection::OUT, action);
 
-            if action.ne(&FirewallAction::Accept) {
+            if action.ne(&FirewallAction::ACCEPT) {
                 continue;
             }
 

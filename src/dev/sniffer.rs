@@ -1,6 +1,6 @@
-use crate::dev::firewall::{FirewallAction, FirewallDirection};
 use colored::Colorize;
 use etherparse::{IpHeader, PacketHeaders, TransportHeader};
+use nullnet_firewall::{FirewallAction, FirewallDirection};
 
 pub fn print_packet_info(pkt_data: &[u8], direction: &FirewallDirection, action: FirewallAction) {
     let mut src_port = 0;
@@ -10,11 +10,12 @@ pub fn print_packet_info(pkt_data: &[u8], direction: &FirewallDirection, action:
     let mut ether_type = 0;
     let mut src_ip = String::new();
     let mut dst_ip = String::new();
-    let color = if direction.eq(&FirewallDirection::Out) {
+    let color = if direction.eq(&FirewallDirection::OUT) {
         "blue"
     } else {
         "purple"
     };
+
     let policy = format!("{:?}", action);
     // total size (headers + payload)
     let size = pkt_data.len();
