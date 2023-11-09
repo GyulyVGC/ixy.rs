@@ -1,3 +1,4 @@
+use nullnet_firewall::{Firewall, FirewallAction, FirewallDirection};
 use std::collections::VecDeque;
 use std::error::Error;
 use std::fs::File;
@@ -9,7 +10,6 @@ use std::sync::atomic::{self, Ordering};
 use std::time::Duration;
 use std::{io, mem, slice, thread};
 
-use crate::dev::firewall::{Firewall, FirewallAction, FirewallDirection};
 use crate::dev::sniffer::print_packet_info;
 use crate::memory;
 use crate::memory::{Dma, Packet, PACKET_HEADROOM};
