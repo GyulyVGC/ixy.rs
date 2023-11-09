@@ -10,7 +10,7 @@ pub fn print_packet_info(pkt_data: &[u8], direction: &FirewallDirection, action:
     let mut ether_type = 0;
     let mut src_ip = String::new();
     let mut dst_ip = String::new();
-    let color = if direction.eq(&FirewallDirection::Out) {
+    let color = if direction.eq(&FirewallDirection::OUT) {
         "blue"
     } else {
         "purple"

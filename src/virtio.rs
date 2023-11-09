@@ -129,14 +129,14 @@ impl IxyDevice for VirtioDevice {
             // MATCH AGAINST FIREWALL RULES
             let action = self
                 .firewall
-                .determine_action_for_packet(&buf[..], &FirewallDirection::In);
+                .resolve_packet(&buf[..], &FirewallDirection::IN);
 
             // SNIFF PACKETS
-            print_packet_info(&buf[..], &FirewallDirection::In, action);
+            print_packet_info(&buf[..], &FirewallDirection::IN, action);
 
             ////////////////////////////////////////////////////////////////////////////////////////
 
-            if action.eq(&FirewallAction::Accept) {
+            if action.eq(&FirewallAction::ACCEPT) {
                 self.rx_bytes += buf.len as u64;
                 self.rx_pkts += 1;
                 buffer.push_back(buf);
@@ -203,12 +203,12 @@ impl IxyDevice for VirtioDevice {
             // MATCH AGAINST FIREWALL RULES
             let action = self
                 .firewall
-                .determine_action_for_packet(&packet[..], &FirewallDirection::Out);
+                .resolve_packet(&packet[..], &FirewallDirection::OUT);
 
             // SNIFF PACKETS
-            print_packet_info(&packet[..], &FirewallDirection::Out, action);
+            print_packet_info(&packet[..], &FirewallDirection::OUT, action);
 
-            if action.ne(&FirewallAction::Accept) {
+            if action.ne(&FirewallAction::ACCEPT) {
                 continue;
             }
 
