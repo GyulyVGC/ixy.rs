@@ -131,9 +131,6 @@ impl IxyDevice for VirtioDevice {
                 .firewall
                 .resolve_packet(&buf[..], &FirewallDirection::IN);
 
-            // SNIFF PACKETS
-            print_packet_info(&buf[..], &FirewallDirection::IN, action);
-
             ////////////////////////////////////////////////////////////////////////////////////////
 
             if action.eq(&FirewallAction::ACCEPT) {
@@ -204,9 +201,6 @@ impl IxyDevice for VirtioDevice {
             let action = self
                 .firewall
                 .resolve_packet(&packet[..], &FirewallDirection::OUT);
-
-            // SNIFF PACKETS
-            print_packet_info(&packet[..], &FirewallDirection::OUT, action);
 
             if action.ne(&FirewallAction::ACCEPT) {
                 continue;
