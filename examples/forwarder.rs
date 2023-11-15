@@ -1,4 +1,3 @@
-use colored::Colorize;
 use etherparse::{IpHeader, PacketHeaders, TransportHeader};
 use std::collections::VecDeque;
 use std::io::Write;
@@ -147,7 +146,6 @@ fn receive(pci_addr: String) {
                             "Attempt to connect to {}\nSuccess! Sending data to {}",
                             socket, socket
                         )
-                        .green()
                     );
                     println!("{}", "-".repeat(42));
                     let payload = PacketHeaders::from_ethernet_slice(&packet[..])
@@ -162,7 +160,6 @@ fn receive(pci_addr: String) {
                             socket,
                             new_stream.err().unwrap()
                         )
-                        .red()
                     );
                     println!("{}", "-".repeat(42));
                     continue;

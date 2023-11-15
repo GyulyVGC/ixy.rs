@@ -5,7 +5,6 @@ use std::time::{SystemTime, UNIX_EPOCH};
 use std::{env, process};
 
 use byteorder::{WriteBytesExt, LE};
-use colored::Colorize;
 use etherparse::PacketHeaders;
 use ixy::memory::{alloc_pkt_batch, Mempool, Packet};
 use ixy::*;
@@ -88,11 +87,11 @@ pub fn handle_arp(pkt_data: &[u8], dev: &mut Box<dyn IxyDevice>) {
                 // check if ether type is 0x0806 (ARP)
                 let target_ip = &headers.payload[24..28];
                 if headers.payload[7] == 1 && target_ip.eq(&[192, 168, 1, 251]) {
-                    println!("{}", "Found an ARP packet with my IP!".color("green"));
-                    println!("{}", format!("Target IP: {:?}", target_ip).color("green"));
+                    println!("{}", "Found an ARP packet with my IP!");
+                    println!("{}", format!("Target IP: {:?}", target_ip));
                     println!(
                         "{}",
-                        "Producing the corresponding ARP reply...".color("green")
+                        "Producing the corresponding ARP reply..."
                     );
                     send_arp_reply(pkt_data, dev);
                 }
