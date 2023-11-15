@@ -8,13 +8,10 @@ use byteorder::{WriteBytesExt, LE};
 use etherparse::PacketHeaders;
 use ixy::memory::{alloc_pkt_batch, Mempool, Packet};
 use ixy::*;
-use simple_logger::SimpleLogger;
 
 const BATCH_SIZE: usize = 32;
 
 pub fn main() -> Result<(), io::Error> {
-    SimpleLogger::new().init().unwrap();
-
     let mut args = env::args().skip(1);
 
     let (pci_addr, output_file) = match (args.next(), args.next()) {
