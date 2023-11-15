@@ -7,7 +7,7 @@
 //     mac_hex
 // }
 
-fn format_ipv4_address(address: [u8; 4]) -> String {
+pub fn format_ipv4_address(address: [u8; 4]) -> String {
     format!("{address:?}")
         .replace('[', "")
         .replace(']', "")
@@ -21,7 +21,7 @@ fn format_ipv4_address(address: [u8; 4]) -> String {
 /// # Arguments
 ///
 /// * `ipv6_long` - Contains the 16 integer composing the not compressed decimal ipv6 address
-fn format_ipv6_address(ipv6_long: [u8; 16]) -> String {
+pub fn format_ipv6_address(ipv6_long: [u8; 16]) -> String {
     //from hex to dec, paying attention to the correct number of digits
     let mut ipv6_hex = String::new();
     for i in 0..=15 {
