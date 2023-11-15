@@ -12,6 +12,3 @@ lazy_static = "1.4.0"
 
 nullnet-firewall = { git = "https://github.com/GyulyVGC/nullnet-firewall", branch = "logs"}
 etherparse = "0.13.0"
-
-[dev-dependencies]
-simple_logger = "4.2.0"
