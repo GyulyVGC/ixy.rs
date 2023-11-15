@@ -1,6 +1,5 @@
 use colored::Colorize;
 use etherparse::{IpHeader, PacketHeaders, TransportHeader};
-use nullnet_firewall::Firewall;
 use std::collections::VecDeque;
 use std::io::Write;
 use std::net::TcpStream;
@@ -61,9 +60,6 @@ pub fn main() {
 // transmits one packet every two seconds
 fn transmit(pci_addr: String) {
     let mut dev = ixy_init(&pci_addr, 1, 1, 0).unwrap();
-
-    // set custom firewall rules for the device (read from a file)
-    dev.set_firewall(Firewall::new("./examples/firewall.txt").unwrap());
 
     // packet to send
     #[rustfmt::skip]
@@ -132,9 +128,6 @@ fn transmit(pci_addr: String) {
 // receives packets and writes them to the corresponding socket
 fn receive(pci_addr: String) {
     let mut dev = ixy_init(&pci_addr, 1, 1, 0).unwrap();
-
-    // set custom firewall rules for the device (read from a file)
-    dev.set_firewall(Firewall::new("./examples/firewall.txt").unwrap());
 
     loop {
         // wait 0.5 second before receiving other packets, to not poll unnecessarily

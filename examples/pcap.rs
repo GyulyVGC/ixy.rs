@@ -9,7 +9,6 @@ use colored::Colorize;
 use etherparse::PacketHeaders;
 use ixy::memory::{alloc_pkt_batch, Mempool, Packet};
 use ixy::*;
-use nullnet_firewall::Firewall;
 use simple_logger::SimpleLogger;
 
 const BATCH_SIZE: usize = 32;
@@ -48,9 +47,6 @@ pub fn main() -> Result<(), io::Error> {
     pcap.write_u32::<LE>(1)?; // network: Ethernet
 
     let mut dev = ixy_init(&pci_addr, 1, 1, 0).unwrap();
-
-    // set custom firewall rules for the device (read from a file)
-    dev.set_firewall(Firewall::new("./examples/firewall.txt").unwrap());
 
     println!("MAC address: {:02X?}", dev.get_mac_addr());
 

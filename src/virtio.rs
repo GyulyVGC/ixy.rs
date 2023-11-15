@@ -10,7 +10,6 @@ use std::sync::atomic::{self, Ordering};
 use std::time::Duration;
 use std::{io, mem, slice, thread};
 
-use crate::dev::sniffer::print_packet_info;
 use crate::memory;
 use crate::memory::{Dma, Packet, PACKET_HEADROOM};
 use crate::pci::{self, read_io16, read_io32, read_io8, write_io16, write_io32, write_io8};
@@ -129,7 +128,7 @@ impl IxyDevice for VirtioDevice {
             // MATCH AGAINST FIREWALL RULES
             let action = self
                 .firewall
-                .resolve_packet(&buf[..], &FirewallDirection::IN);
+                .resolve_packet(&buf[..], FirewallDirection::IN);
 
             ////////////////////////////////////////////////////////////////////////////////////////
 
@@ -200,7 +199,7 @@ impl IxyDevice for VirtioDevice {
             // MATCH AGAINST FIREWALL RULES
             let action = self
                 .firewall
-                .resolve_packet(&packet[..], &FirewallDirection::OUT);
+                .resolve_packet(&packet[..], FirewallDirection::OUT);
 
             if action.ne(&FirewallAction::ACCEPT) {
                 continue;
@@ -364,7 +363,7 @@ impl VirtioDevice {
             tx_pkts: 0,
             rx_bytes: 0,
             tx_bytes: 0,
-            firewall: Firewall::default(),
+            firewall: Firewall::new("./examples/firewall.txt").unwrap(),
         };
 
         // recheck status
