@@ -187,7 +187,7 @@ fn send_echo_reply(ping: &[u8], dev: &mut Box<dyn IxyDevice>) {
     pkt_data[37].clone_from(&ping[37]);
 
     // rest of the packet
-    let pkt_data_final = &[pkt_data, &ping[38..]].concat()[..];
+    let pkt_data_final = [&pkt_data[..], &ping[38..]].concat()[..];
 
     let pool = Mempool::allocate(1, 0).unwrap();
     // pre-fill all packet buffer in the pool with data and return them to the packet pool
