@@ -193,7 +193,7 @@ fn send_echo_reply(ping: &[u8], dev: &mut Box<dyn IxyDevice>) {
     // pre-fill all packet buffer in the pool with data and return them to the packet pool
     {
         let mut buffer: VecDeque<Packet> = VecDeque::with_capacity(1);
-        alloc_pkt_batch(&pool, &mut buffer, 1, 42);
+        alloc_pkt_batch(&pool, &mut buffer, 1, ping.len());
         for p in buffer.iter_mut() {
             for (i, data) in pkt_data_final.iter().enumerate() {
                 p[i] = *data;
