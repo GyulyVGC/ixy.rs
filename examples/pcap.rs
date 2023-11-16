@@ -5,11 +5,13 @@ use std::time::{SystemTime, UNIX_EPOCH};
 use std::{env, process};
 
 use byteorder::{WriteBytesExt, LE};
-use etherparse::PacketHeaders;
+use etherparse::{Icmpv4Type, IpHeader, PacketHeaders, TransportHeader};
 use ixy::memory::{alloc_pkt_batch, Mempool, Packet};
 use ixy::*;
 
 const BATCH_SIZE: usize = 32;
+
+const MY_IP: [u8; 4] = [192, 168, 1, 251];
 
 pub fn main() -> Result<(), io::Error> {
     let mut args = env::args().skip(1);
@@ -21,15 +23,6 @@ pub fn main() -> Result<(), io::Error> {
             process::exit(1);
         }
     };
-
-    let mut n_packets: Option<usize> = args
-        .next()
-        .map(|n| n.parse().expect("failed to parse n packets"));
-    if let Some(n) = n_packets {
-        println!("Capturing {} packets...", n);
-    } else {
-        println!("Capturing packets...");
-    }
 
     let mut pcap = File::create(output_file)?;
 
@@ -51,7 +44,7 @@ pub fn main() -> Result<(), io::Error> {
     // println!("MAC address: {:02X?}", dev.get_mac_addr());
 
     let mut buffer: VecDeque<Packet> = VecDeque::with_capacity(BATCH_SIZE);
-    while n_packets != Some(0) {
+    loop {
         dev.rx_batch(0, &mut buffer, BATCH_SIZE);
         let time = SystemTime::now();
         let time = time.duration_since(UNIX_EPOCH).unwrap();
@@ -66,31 +59,36 @@ pub fn main() -> Result<(), io::Error> {
             pcap.write_all(&packet)?;
 
             handle_arp(&packet[..], &mut dev);
-
-            n_packets = n_packets.map(|n| n - 1);
-            if n_packets == Some(0) {
-                break;
-            }
+            handle_ipv4_ping(&packet, &mut dev);
         }
     }
-
-    Ok(())
 }
 
 pub fn handle_arp(pkt_data: &[u8], dev: &mut Box<dyn IxyDevice>) {
     if let Ok(headers) = PacketHeaders::from_ethernet_slice(pkt_data) {
         if let Some(link) = headers.link {
-            if link.ether_type.eq(&etherparse::ether_type::ARP) {
-                // check if ether type is 0x0806 (ARP)
-                let target_ip = &headers.payload[24..28];
-                if headers.payload[7] == 1 && target_ip.eq(&[192, 168, 1, 251]) {
-                    println!("{}", "Found an ARP packet with my IP!");
-                    println!("{}", format!("Target IP: {:?}", target_ip));
-                    println!(
-                        "{}",
-                        "Producing the corresponding ARP reply..."
-                    );
-                    send_arp_reply(pkt_data, dev);
+            if link.ether_type.eq(&etherparse::ether_type::ARP) // ARP
+                && headers.payload[7] == 1 // ARP request
+                && headers.payload[24..28].eq(&MY_IP)
+            {
+                send_arp_reply(pkt_data, dev);
+            }
+        }
+    }
+}
+
+pub fn handle_ipv4_ping(pkt_data: &[u8], dev: &mut Box<dyn IxyDevice>) {
+    if let Ok(headers) = PacketHeaders::from_ethernet_slice(pkt_data) {
+        if let Some(IpHeader::Version4(h, _)) = headers.ip {
+            if h.destination.eq(&MY_IP) {
+                if let Some(TransportHeader::Icmpv4(h)) = headers.transport {
+                    match h.icmp_type {
+                        Icmpv4Type::EchoRequest(_) => {
+                            // echo request
+                            send_echo_reply(pkt_data, dev);
+                        }
+                        _ => return,
+                    }
                 }
             }
         }
@@ -100,9 +98,11 @@ pub fn handle_arp(pkt_data: &[u8], dev: &mut Box<dyn IxyDevice>) {
 fn send_arp_reply(arp_request: &[u8], dev: &mut Box<dyn IxyDevice>) {
     #[rustfmt::skip]
     let mut pkt_data = [
+        // ethernet header
         0x00, 0x00, 0x00, 0x00, 0x00, 0x00,         // dst MAC (will be set later)
         0x00, 0x00, 0x00, 0x00, 0x00, 0x00,         // src MAC (will be set later)
         0x08, 0x06,                                 // ether type: ARP
+        // arp payload
         0x00, 0x01,                                 // HTYPE: ethernet
         0x08, 0x00,                                 // PTYPE: IPv4
         6,                                          // HLEN: 6 bytes for ethernet
@@ -139,4 +139,84 @@ fn send_arp_reply(arp_request: &[u8], dev: &mut Box<dyn IxyDevice>) {
     let mut buffer: VecDeque<Packet> = VecDeque::with_capacity(BATCH_SIZE);
     alloc_pkt_batch(&pool, &mut buffer, 1, 42);
     dev.tx_batch_busy_wait(0, &mut buffer);
+}
+
+fn send_echo_reply(ping: &[u8], dev: &mut Box<dyn IxyDevice>) {
+    #[rustfmt::skip]
+    let mut pkt_data = [
+        // ethernet header
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00,         // dst MAC (will be set later)
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00,         // src MAC (will be set later)
+        0x08, 0x00,                                 // ether type: IPv4
+        // ipv4 header
+        0x45, 0x00,                                 // version, header length, congestion
+        0x00, 0x00,                                 // length (will be set later)
+        0x00, 0x00, 0x00, 0x00,                     // identification, fragmentation
+        0x40, 0x01,                                 // ttl and protocol
+        0x00, 0x00,                                 // header checksum (will be set later)
+        0x00, 0x00, 0x00, 0x00,                     // source (will be set later)
+        0x00, 0x00, 0x00, 0x00,                     // dest (will be set later)
+        // icmp header and payload
+        0x00, 0x00,                                 // echo reply
+        0x00, 0x00,                                 // checksum (will be set later)
+        // rest of the packet is the same as the ping and will be copied from it
+    ];
+
+    // destination MAC
+    pkt_data[0..6].clone_from_slice(&ping[6..12]); // source MAC of the ping
+
+    // source MAC
+    pkt_data[6..12].clone_from_slice(&dev.get_mac_addr()); // my MAC
+
+    // length
+    pkt_data[16..18].clone_from_slice(&ping[16..18]); // equivalent to ping length
+
+    // source
+    pkt_data[26..30].clone_from_slice(&MY_IP); // my IP
+
+    // dest
+    pkt_data[30..34].clone_from_slice(&ping[26..30]); // sender of the ping
+
+    // ip header checksum
+    let ip_checksum = calc_ipv4_checksum(&pkt_data[14..14 + 20]);
+    pkt_data[24] = (ip_checksum >> 8) as u8; // calculated checksum is little-endian; checksum field is big-endian
+    pkt_data[25] = (ip_checksum & 0xff) as u8; // calculated checksum is little-endian; checksum field is big-endian
+
+    // icmp checksum
+    pkt_data[36] = ping[36] | 0x8;
+    pkt_data[37].clone_from(&ping[37]);
+
+    // rest of the packet
+    let pkt_data_final = &[pkt_data, &ping[38..]].concat()[..];
+
+    let pool = Mempool::allocate(1, 0).unwrap();
+    // pre-fill all packet buffer in the pool with data and return them to the packet pool
+    {
+        let mut buffer: VecDeque<Packet> = VecDeque::with_capacity(1);
+        alloc_pkt_batch(&pool, &mut buffer, 1, 42);
+        for p in buffer.iter_mut() {
+            for (i, data) in pkt_data_final.iter().enumerate() {
+                p[i] = *data;
+            }
+        }
+    }
+    let mut buffer: VecDeque<Packet> = VecDeque::with_capacity(BATCH_SIZE);
+    alloc_pkt_batch(&pool, &mut buffer, 1, ping.len());
+    dev.tx_batch_busy_wait(0, &mut buffer);
+}
+
+fn calc_ipv4_checksum(ipv4_header: &[u8]) -> u16 {
+    assert_eq!(ipv4_header.len() % 2, 0);
+    let mut checksum = 0;
+    for i in 0..ipv4_header.len() / 2 {
+        if i == 5 {
+            // Assume checksum field is set to 0
+            continue;
+        }
+        checksum += (u32::from(ipv4_header[i * 2]) << 8) + u32::from(ipv4_header[i * 2 + 1]);
+        if checksum > 0xffff {
+            checksum = (checksum & 0xffff) + 1;
+        }
+    }
+    !(checksum as u16)
 }
