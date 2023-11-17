@@ -139,7 +139,7 @@ pub trait IxyDevice {
         }
     }
 
-    fn set_firewall(&mut self, _firewall: Firewall) {}
+    fn update_firewall(&mut self) {}
 }
 
 /// Holds network card stats about sent and received packets.
@@ -294,7 +294,7 @@ impl IxyDevice for Box<dyn IxyDevice> {
         (**self).get_link_speed()
     }
 
-    fn set_firewall(&mut self, firewall: Firewall) {
-        (**self).set_firewall(firewall)
+    fn update_firewall(&mut self) {
+        (**self).update_firewall()
     }
 }

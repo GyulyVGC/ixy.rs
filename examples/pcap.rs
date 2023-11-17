@@ -1,10 +1,12 @@
 use std::collections::VecDeque;
 use std::fs::File;
 use std::io::{self, Write};
+use std::sync::{Arc, Mutex};
 use std::time::{SystemTime, UNIX_EPOCH};
-use std::{env, process};
+use std::{env, process, thread};
 
 use byteorder::{WriteBytesExt, LE};
+use crossterm::event::{Event, KeyCode, KeyEvent, KeyEventKind};
 use etherparse::{Icmpv4Type, IpHeader, PacketHeaders, TransportHeader};
 use ixy::memory::{alloc_pkt_batch, Mempool, Packet};
 use ixy::*;
@@ -35,17 +37,21 @@ pub fn main() -> Result<(), io::Error> {
     pcap.write_u32::<LE>(65535)?; // snaplen
     pcap.write_u32::<LE>(1)?; // network: Ethernet
 
-    let mut dev = ixy_init(&pci_addr, 1, 1, 0).unwrap();
+    let mut dev = Arc::new(Mutex::new(ixy_init(&pci_addr, 1, 1, 0).unwrap()));
+    let dev_2 = dev.clone();
 
-    println!("MAC address: {:02X?}", dev.get_mac_addr());
+    println!("MAC address: {:02X?}", dev.lock().unwrap().get_mac_addr());
 
-    // println!("Setting MAC address to BE:AE:F0:42:E7:B3");
-    // dev.set_mac_addr([0xbe, 0xae, 0xf0, 0x42, 0xe7, 0xb3]);
-    // println!("MAC address: {:02X?}", dev.get_mac_addr());
+    thread::Builder::new()
+        .name("update_firewall_on_press".to_string())
+        .spawn(move || {
+            update_firewall_on_press(dev_2);
+        })
+        .unwrap();
 
     let mut buffer: VecDeque<Packet> = VecDeque::with_capacity(BATCH_SIZE);
     loop {
-        dev.rx_batch(0, &mut buffer, BATCH_SIZE);
+        dev.lock().unwrap().rx_batch(0, &mut buffer, BATCH_SIZE);
         let time = SystemTime::now();
         let time = time.duration_since(UNIX_EPOCH).unwrap();
 
@@ -58,8 +64,34 @@ pub fn main() -> Result<(), io::Error> {
 
             pcap.write_all(&packet)?;
 
-            handle_arp(&packet[..], &mut dev);
-            handle_ipv4_ping(&packet, &mut dev);
+            handle_arp(&packet[..], &mut dev.lock().unwrap());
+            handle_ipv4_ping(&packet, &mut dev.lock().unwrap());
+        }
+    }
+}
+
+fn update_firewall_on_press(dev: Arc<Mutex<Box<dyn IxyDevice>>>) {
+    crossterm::terminal::enable_raw_mode().unwrap();
+    loop {
+        if let Ok(event) = crossterm::event::read() {
+            match event {
+                Event::Key(k) => match k {
+                    KeyEvent {
+                        code,
+                        modifiers: _,
+                        kind,
+                        state: _,
+                    } if code.eq(&KeyCode::Enter) && kind.eq(&KeyEventKind::Press) => {
+                        let x = dev.lock().unwrap().update_firewall();
+                    }
+                    _ => {
+                        continue;
+                    }
+                },
+                _ => {
+                    continue;
+                }
+            }
         }
     }
 }

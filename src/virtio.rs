@@ -19,6 +19,8 @@ use crate::{DeviceStats, IxyDevice, Mempool};
 // we're currently only supporting legacy Virtio via PCI so this is fixed (4.1.5.1.3.1)
 const QUEUE_ALIGNMENT: usize = 4096;
 
+const FIREWALL_PATH: &str = "./examples/firewall.txt";
+
 static NET_HEADER: virtio_net_hdr = virtio_net_hdr {
     flags: 0,
     gso_type: VIRTIO_NET_HDR_GSO_NONE,
@@ -273,8 +275,8 @@ impl IxyDevice for VirtioDevice {
         1000
     }
 
-    fn set_firewall(&mut self, firewall: Firewall) {
-        self.firewall = firewall;
+    fn update_firewall(&mut self) {
+        self.firewall.update_rules(FIREWALL_PATH);
     }
 }
 
@@ -363,7 +365,7 @@ impl VirtioDevice {
             tx_pkts: 0,
             rx_bytes: 0,
             tx_bytes: 0,
-            firewall: Firewall::new("./examples/firewall.txt").unwrap(),
+            firewall: Firewall::new(FIREWALL_PATH).unwrap(),
         };
 
         // recheck status
