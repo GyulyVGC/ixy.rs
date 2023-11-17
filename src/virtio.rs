@@ -276,7 +276,7 @@ impl IxyDevice for VirtioDevice {
     }
 
     fn update_firewall(&mut self) {
-        self.firewall.update_rules(FIREWALL_PATH);
+        self.firewall.update_rules(FIREWALL_PATH).unwrap();
     }
 }
 
