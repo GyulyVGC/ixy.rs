@@ -37,7 +37,7 @@ pub fn main() -> Result<(), io::Error> {
     pcap.write_u32::<LE>(65535)?; // snaplen
     pcap.write_u32::<LE>(1)?; // network: Ethernet
 
-    let mut dev = Arc::new(Mutex::new(ixy_init(&pci_addr, 1, 1, 0).unwrap()));
+    let mut dev = Arc::new(Mutex::new(ixy_init(&pci_addr, 1, 1, 0).unwrap() as Box<dyn IxyDevice + Send>));
     let dev_2 = dev.clone();
 
     println!("MAC address: {:02X?}", dev.lock().unwrap().get_mac_addr());

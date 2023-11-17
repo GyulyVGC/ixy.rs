@@ -204,7 +204,7 @@ pub fn ixy_init(
     rx_queues: u16,
     tx_queues: u16,
     interrupt_timeout: i16,
-) -> Result<Box<dyn IxyDevice + Send>, Box<dyn Error>> {
+) -> Result<Box<dyn IxyDevice>, Box<dyn Error>> {
     let mut vendor_file = pci_open_resource_ro(pci_addr, "vendor").expect("wrong pci address");
     let mut device_file = pci_open_resource_ro(pci_addr, "device").expect("wrong pci address");
     let mut config_file = pci_open_resource_ro(pci_addr, "config").expect("wrong pci address");
