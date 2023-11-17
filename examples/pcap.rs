@@ -1,7 +1,7 @@
 use std::collections::VecDeque;
 use std::fs::File;
 use std::io::{self, Write};
-use std::sync::{Arc, Condvar, Mutex};
+use std::sync::{Arc, Mutex};
 use std::time::{SystemTime, UNIX_EPOCH};
 use std::{env, process, thread};
 
@@ -42,7 +42,7 @@ pub fn main() -> Result<(), io::Error> {
     println!("MAC address: {:02X?}", dev.get_mac_addr());
 
     let lock = Arc::new(Mutex::new(false));
-    let lock_2 = pair.clone();
+    let lock_2 = lock.clone();
 
     thread::Builder::new()
         .name("update_firewall_on_press".to_string())
