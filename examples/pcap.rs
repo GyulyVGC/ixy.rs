@@ -56,7 +56,7 @@ pub fn main() -> Result<(), io::Error> {
         // check if return key has been pressed
         if lock.lock().unwrap().eq(&true) {
             dev.update_firewall();
-            let return_pressed = lock.lock().unwrap();
+            let mut return_pressed = lock.lock().unwrap();
             *return_pressed = false;
             drop(return_pressed);
         }
