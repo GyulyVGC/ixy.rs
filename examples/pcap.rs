@@ -81,7 +81,6 @@ pub fn main() -> Result<(), io::Error> {
 }
 
 fn update_firewall_on_press(lock: Arc<Mutex<bool>>) {
-    // crossterm::terminal::enable_raw_mode().unwrap();
     loop {
         if let Ok(event) = crossterm::event::read() {
             match event {

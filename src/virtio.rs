@@ -1,3 +1,4 @@
+use etherparse::{IpHeader, PacketHeaders};
 use nullnet_firewall::{Firewall, FirewallAction, FirewallDirection};
 use std::collections::VecDeque;
 use std::error::Error;
@@ -10,10 +11,10 @@ use std::sync::atomic::{self, Ordering};
 use std::time::Duration;
 use std::{io, mem, slice, thread};
 
-use crate::memory;
 use crate::memory::{Dma, Packet, PACKET_HEADROOM};
 use crate::pci::{self, read_io16, read_io32, read_io8, write_io16, write_io32, write_io8};
 use crate::virtio_constants::*;
+use crate::{alloc_pkt_batch, memory};
 use crate::{DeviceStats, IxyDevice, Mempool};
 
 // we're currently only supporting legacy Virtio via PCI so this is fixed (4.1.5.1.3.1)
@@ -134,10 +135,18 @@ impl IxyDevice for VirtioDevice {
 
             ////////////////////////////////////////////////////////////////////////////////////////
 
-            if action.eq(&FirewallAction::ACCEPT) {
-                self.rx_bytes += buf.len as u64;
-                self.rx_pkts += 1;
-                buffer.push_back(buf);
+            match action {
+                FirewallAction::ACCEPT => {
+                    // deliver packet to the user
+                    self.rx_bytes += buf.len as u64;
+                    self.rx_pkts += 1;
+                    buffer.push_back(buf);
+                }
+                FirewallAction::DENY => { /* silently drop packet */ }
+                FirewallAction::REJECT => {
+                    // send ICMP Destination Unreachable
+                    send_destination_unreachable(&buf[..], self);
+                }
             }
         }
 
@@ -278,6 +287,88 @@ impl IxyDevice for VirtioDevice {
     fn update_firewall(&mut self) {
         self.firewall.update_rules(FIREWALL_PATH).unwrap();
     }
+}
+
+fn send_destination_unreachable(packet: &[u8], dev: &mut Box<dyn IxyDevice>) {
+    if let Ok(headers) = PacketHeaders::from_ethernet_slice(packet) {
+        if let Some(IpHeader::Version4(_, _)) = headers.ip {
+            #[rustfmt::skip]
+                let mut pkt_data = [
+                // ethernet header
+                0x00, 0x00, 0x00, 0x00, 0x00, 0x00,         // dst MAC (will be set later)
+                0x00, 0x00, 0x00, 0x00, 0x00, 0x00,         // src MAC (will be set later)
+                0x08, 0x00,                                 // ether type: IPv4
+                // ipv4 header
+                0x45, 0x00,                                 // version, header length, congestion
+                0x00, 0x00,                                 // length (will be set later)
+                0x00, 0x00, 0x00, 0x00,                     // identification, fragmentation
+                0x40, 0x01,                                 // ttl and protocol
+                0x00, 0x00,                                 // header checksum (will be set later)
+                0x00, 0x00, 0x00, 0x00,                     // source (will be set later)
+                0x00, 0x00, 0x00, 0x00,                     // dest (will be set later)
+                // icmp header
+                0x03, 0x01,                                 // destination host unreachable
+                0x00, 0x00,                                 // checksum (will be set later)
+                0x00, 0x00, 0x00, 0x00,                     // unused
+            ];
+
+            // destination MAC
+            pkt_data[0..6].clone_from_slice(&packet[6..12]); // source MAC of the rejected packet
+
+            // source MAC
+            pkt_data[6..12].clone_from_slice(&dev.get_mac_addr()); // my MAC
+
+            // length
+            pkt_data[16] = 0x00; // 42 - 14 = 28 bytes (0x001c)
+            pkt_data[17] = 0x1c;
+
+            // source
+            pkt_data[26..30].clone_from_slice(&MY_IP); // my IP
+
+            // dest
+            pkt_data[30..34].clone_from_slice(&packet[26..30]); // sender of the rejected packet
+
+            // ip header checksum
+            let ip_checksum = calc_ipv4_checksum(&pkt_data[14..14 + 20]);
+            pkt_data[24] = (ip_checksum >> 8) as u8; // calculated checksum is little-endian; checksum field is big-endian
+            pkt_data[25] = (ip_checksum & 0xff) as u8; // calculated checksum is little-endian; checksum field is big-endian
+
+            // icmp checksum
+            pkt_data[36] = 0xfc;
+            pkt_data[37] = 0xfe;
+
+            let pool = Mempool::allocate(1, 0).unwrap();
+            // pre-fill all packet buffer in the pool with data and return them to the packet pool
+            {
+                let mut buffer: VecDeque<Packet> = VecDeque::with_capacity(1);
+                alloc_pkt_batch(&pool, &mut buffer, 1, 42);
+                for p in buffer.iter_mut() {
+                    for (i, data) in pkt_data_final.iter().enumerate() {
+                        p[i] = *data;
+                    }
+                }
+            }
+            let mut buffer: VecDeque<Packet> = VecDeque::with_capacity(BATCH_SIZE);
+            alloc_pkt_batch(&pool, &mut buffer, 1, 42);
+            dev.tx_batch_busy_wait(0, &mut buffer);
+        }
+    }
+}
+
+fn calc_ipv4_checksum(ipv4_header: &[u8]) -> u16 {
+    assert_eq!(ipv4_header.len() % 2, 0);
+    let mut checksum = 0;
+    for i in 0..ipv4_header.len() / 2 {
+        if i == 5 {
+            // Assume checksum field is set to 0
+            continue;
+        }
+        checksum += (u32::from(ipv4_header[i * 2]) << 8) + u32::from(ipv4_header[i * 2 + 1]);
+        if checksum > 0xffff {
+            checksum = (checksum & 0xffff) + 1;
+        }
+    }
+    !(checksum as u16)
 }
 
 impl VirtioDevice {
