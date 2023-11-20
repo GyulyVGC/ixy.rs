@@ -342,7 +342,7 @@ fn send_destination_unreachable(packet: &[u8], dev: &mut VirtioDevice) {
             pkt_data[37] = 0xfe;
 
             // rest of the packet: original IP header and first 8 bytes of data
-            let pkt_data_final = &[&pkt_data[..], &packet[14..14+20], &headers.payload[0..8]].concat()[..];
+            let pkt_data_final = &[&pkt_data[..], &packet[14..]].concat()[..];
 
             let pool = Mempool::allocate(1, 0).unwrap();
             // pre-fill all packet buffer in the pool with data and return them to the packet pool
