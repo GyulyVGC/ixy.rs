@@ -225,7 +225,7 @@ fn send_echo_reply(ping: &[u8], dev: &mut Box<dyn IxyDevice>) {
     pkt_data[25] = (ip_checksum & 0xff) as u8; // calculated checksum is little-endian; checksum field is big-endian
 
     // icmp checksum
-    pkt_data[36] = ping[36] | 0x9;
+    pkt_data[36] = ping[36] | 0x8;
     pkt_data[37].clone_from(&ping[37]);
 
     // rest of the packet
