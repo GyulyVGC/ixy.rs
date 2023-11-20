@@ -323,8 +323,8 @@ fn send_destination_unreachable(packet: &[u8], dev: &mut VirtioDevice) {
             pkt_data[6..12].clone_from_slice(&dev.get_mac_addr()); // my MAC
 
             // length
-            pkt_data[16] = 0x00; // 42 - 14 = 28 bytes (0x001c)
-            pkt_data[17] = 0x1c;
+            pkt_data[16] = 0x00; // 70 - 14 = 56 bytes (0x0038)
+            pkt_data[17] = 0x38;
 
             // source
             pkt_data[26..30].clone_from_slice(&MY_IP); // my IP
