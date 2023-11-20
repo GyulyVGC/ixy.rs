@@ -312,6 +312,8 @@ fn send_destination_unreachable(packet: &[u8], dev: &mut VirtioDevice) {
                 0x03, 0x01,                                 // destination host unreachable
                 0x00, 0x00,                                 // checksum (will be set later)
                 0x00, 0x00, 0x00, 0x00,                     // unused
+                // the original ip header and the first 64 bits
+                // of the original datagram will be included here
             ];
 
             // destination MAC
@@ -339,19 +341,22 @@ fn send_destination_unreachable(packet: &[u8], dev: &mut VirtioDevice) {
             pkt_data[36] = 0xfc;
             pkt_data[37] = 0xfe;
 
+            // rest of the packet: original IP header and first 8 bytes of data
+            let pkt_data_final = &[&pkt_data[..], &packet[14..14+20], &headers.payload[0..8]].concat()[..];
+
             let pool = Mempool::allocate(1, 0).unwrap();
             // pre-fill all packet buffer in the pool with data and return them to the packet pool
             {
                 let mut buffer: VecDeque<Packet> = VecDeque::with_capacity(1);
-                alloc_pkt_batch(&pool, &mut buffer, 1, 42);
+                alloc_pkt_batch(&pool, &mut buffer, 1, pkt_data_final.len());
                 for p in buffer.iter_mut() {
-                    for (i, data) in pkt_data.iter().enumerate() {
+                    for (i, data) in pkt_data_final.iter().enumerate() {
                         p[i] = *data;
                     }
                 }
             }
             let mut buffer: VecDeque<Packet> = VecDeque::with_capacity(1);
-            alloc_pkt_batch(&pool, &mut buffer, 1, 42);
+            alloc_pkt_batch(&pool, &mut buffer, 1, pkt_data_final.len());
             dev.tx_batch_busy_wait(0, &mut buffer);
         }
     }
