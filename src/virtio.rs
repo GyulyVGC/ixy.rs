@@ -20,6 +20,8 @@ use crate::{DeviceStats, IxyDevice, Mempool};
 // we're currently only supporting legacy Virtio via PCI so this is fixed (4.1.5.1.3.1)
 const QUEUE_ALIGNMENT: usize = 4096;
 
+const MY_IP: [u8; 4] = [192, 168, 1, 251];
+
 const FIREWALL_PATH: &str = "./examples/firewall.txt";
 
 static NET_HEADER: virtio_net_hdr = virtio_net_hdr {
@@ -289,7 +291,7 @@ impl IxyDevice for VirtioDevice {
     }
 }
 
-fn send_destination_unreachable(packet: &[u8], dev: &mut Box<dyn IxyDevice>) {
+fn send_destination_unreachable(packet: &[u8], dev: &mut VirtioDevice) {
     if let Ok(headers) = PacketHeaders::from_ethernet_slice(packet) {
         if let Some(IpHeader::Version4(_, _)) = headers.ip {
             #[rustfmt::skip]
@@ -343,12 +345,12 @@ fn send_destination_unreachable(packet: &[u8], dev: &mut Box<dyn IxyDevice>) {
                 let mut buffer: VecDeque<Packet> = VecDeque::with_capacity(1);
                 alloc_pkt_batch(&pool, &mut buffer, 1, 42);
                 for p in buffer.iter_mut() {
-                    for (i, data) in pkt_data_final.iter().enumerate() {
+                    for (i, data) in pkt_data.iter().enumerate() {
                         p[i] = *data;
                     }
                 }
             }
-            let mut buffer: VecDeque<Packet> = VecDeque::with_capacity(BATCH_SIZE);
+            let mut buffer: VecDeque<Packet> = VecDeque::with_capacity(1);
             alloc_pkt_batch(&pool, &mut buffer, 1, 42);
             dev.tx_batch_busy_wait(0, &mut buffer);
         }
