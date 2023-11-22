@@ -338,7 +338,7 @@ fn send_destination_unreachable(packet: &[u8], dev: &mut VirtioDevice) {
             pkt_data[25] = (ip_checksum & 0xff) as u8; // calculated checksum is little-endian; checksum field is big-endian
 
             // rest of the packet: original IP header and first 8 bytes of data
-            let mut pkt_data_final = &[&pkt_data[..], &packet[14..14+28]].concat()[..];
+            let pkt_data_final = &mut[&pkt_data[..], &packet[14..14+28]].concat()[..];
 
             // icmp checksum, same function as ipv4 header checksum
             let icmp_checksum = calc_ipv4_checksum(&pkt_data_final[34..]);
