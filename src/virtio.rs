@@ -337,12 +337,14 @@ fn send_destination_unreachable(packet: &[u8], dev: &mut VirtioDevice) {
             pkt_data[24] = (ip_checksum >> 8) as u8; // calculated checksum is little-endian; checksum field is big-endian
             pkt_data[25] = (ip_checksum & 0xff) as u8; // calculated checksum is little-endian; checksum field is big-endian
 
-            // icmp checksum
-            pkt_data[36] = 0xfc;
-            pkt_data[37] = 0xfe;
-
             // rest of the packet: original IP header and first 8 bytes of data
-            let pkt_data_final = &[&pkt_data[..], &packet[14..14+28]].concat()[..];
+            let mut pkt_data_final = &[&pkt_data[..], &packet[14..14+28]].concat()[..];
+
+            // icmp checksum, same function as ipv4 header checksum
+            let icmp_checksum = calc_ipv4_checksum(&pkt_data_final[34..]);
+            pkt_data_final[36] = (icmp_checksum >> 8) as u8; // calculated checksum is little-endian; checksum field is big-endian
+            pkt_data_final[37] = (icmp_checksum & 0xff) as u8; // calculated checksum is little-endian; checksum field is big-endian
+
 
             let pool = Mempool::allocate(1, 0).unwrap();
             // pre-fill all packet buffer in the pool with data and return them to the packet pool
