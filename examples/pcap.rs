@@ -224,12 +224,13 @@ fn send_echo_reply(ping: &[u8], dev: &mut Box<dyn IxyDevice>) {
     pkt_data[24] = (ip_checksum >> 8) as u8; // calculated checksum is little-endian; checksum field is big-endian
     pkt_data[25] = (ip_checksum & 0xff) as u8; // calculated checksum is little-endian; checksum field is big-endian
 
-    // icmp checksum
-    pkt_data[36] = ping[36] | 0x8;
-    pkt_data[37].clone_from(&ping[37]);
-
     // rest of the packet
-    let pkt_data_final = &[&pkt_data[..], &ping[38..]].concat()[..];
+    let pkt_data_final = &mut[&pkt_data[..], &ping[38..]].concat()[..];
+
+    // icmp checksum
+    let icmp_checksum = calc_icmp_checksum(&pkt_data_final[34..]);
+    pkt_data_final[36] = (icmp_checksum >> 8) as u8; // calculated checksum is little-endian; checksum field is big-endian
+    pkt_data_final[37] = (icmp_checksum & 0xff) as u8; // calculated checksum is little-endian; checksum field is big-endian
 
     let pool = Mempool::allocate(1, 0).unwrap();
     // pre-fill all packet buffer in the pool with data and return them to the packet pool
@@ -256,6 +257,18 @@ fn calc_ipv4_checksum(ipv4_header: &[u8]) -> u16 {
             continue;
         }
         checksum += (u32::from(ipv4_header[i * 2]) << 8) + u32::from(ipv4_header[i * 2 + 1]);
+        if checksum > 0xffff {
+            checksum = (checksum & 0xffff) + 1;
+        }
+    }
+    !(checksum as u16)
+}
+
+fn calc_icmp_checksum(icmp_data: &[u8]) -> u16 {
+    assert_eq!(icmp_data.len() % 2, 0);
+    let mut checksum = 0;
+    for i in 0..icmp_data.len() / 2 {
+        checksum += (u32::from(icmp_data[i * 2]) << 8) + u32::from(icmp_data[i * 2 + 1]);
         if checksum > 0xffff {
             checksum = (checksum & 0xffff) + 1;
         }
