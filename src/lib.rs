@@ -6,9 +6,6 @@
 
 #![warn(rust_2018_idioms)]
 
-#[macro_use]
-extern crate log;
-
 #[rustfmt::skip]
 mod constants;
 mod interrupts;
