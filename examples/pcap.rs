@@ -13,6 +13,7 @@ use ixy::*;
 
 const BATCH_SIZE: usize = 32;
 
+const MY_MAC: [u8; 6] = [0x3a, 0x24, 0x26, 0x82, 0xf3, 0x11];
 const MY_IP: [u8; 4] = [192, 168, 1, 251];
 
 pub fn main() -> Result<(), io::Error> {
@@ -39,6 +40,7 @@ pub fn main() -> Result<(), io::Error> {
 
     let mut dev = ixy_init(&pci_addr, 1, 1, 0).unwrap();
 
+    dev.set_mac_addr(MY_MAC);
     println!("MAC address: {:02X?}", dev.get_mac_addr());
 
     let lock = Arc::new(Mutex::new(false));
