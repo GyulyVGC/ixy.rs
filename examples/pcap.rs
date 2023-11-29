@@ -14,7 +14,7 @@ use ixy::*;
 const BATCH_SIZE: usize = 32;
 
 const MY_MAC: [u8; 6] = [0x3a, 0x24, 0x26, 0x82, 0xf3, 0x11];
-const MY_IP: [u8; 4] = [192, 168, 1, 251];
+const MY_IP: [u8; 4] = [192, 168, 1, 162];
 
 pub fn main() -> Result<(), io::Error> {
     let mut args = env::args().skip(1);
@@ -153,7 +153,7 @@ fn send_arp_reply(arp_request: &[u8], dev: &mut Box<dyn IxyDevice>) {
         4,                                          // PLEN: 4 bytes for IPv4
         0x00, 0x02,                                 // operation: 2 is ARP reply
         0x00, 0x00, 0x00, 0x00, 0x00, 0x00,         // sender MAC (will be set later)
-        192, 168, 1, 251,                           // sender IP (for the moment it's static)
+        0, 0, 0, 0,                                 // sender IP (will be set later)
         0x00, 0x00, 0x00, 0x00, 0x00, 0x00,         // target MAC (will be set later)
         0, 0, 0, 0,                                 // target IP (will be set later)
     ];
@@ -164,6 +164,8 @@ fn send_arp_reply(arp_request: &[u8], dev: &mut Box<dyn IxyDevice>) {
     pkt_data[6..12].clone_from_slice(&MY_MAC);
     // set sender MAC to MAC address of this device
     pkt_data[22..28].clone_from_slice(&MY_MAC);
+    // set the sender IP to my IP
+    pkt_data[28..32].clone_from_slice(&MY_IP);
     // set target MAC to source MAC address of the ARP request
     pkt_data[32..38].clone_from_slice(&arp_request[6..12]);
     // set the target IP to source IP address of the ARP request

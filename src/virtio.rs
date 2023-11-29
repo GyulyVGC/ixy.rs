@@ -21,7 +21,7 @@ use crate::{DeviceStats, IxyDevice, Mempool};
 const QUEUE_ALIGNMENT: usize = 4096;
 
 const MY_MAC: [u8; 6] = [0x3a, 0x24, 0x26, 0x82, 0xf3, 0x11];
-const MY_IP: [u8; 4] = [192, 168, 1, 251];
+const MY_IP: [u8; 4] = [192, 168, 1, 162];
 
 const FIREWALL_PATH: &str = "./examples/firewall.txt";
 
