@@ -161,9 +161,9 @@ fn send_arp_reply(arp_request: &[u8], dev: &mut Box<dyn IxyDevice>) {
     // set destination MAC to source MAC address of the ARP request
     pkt_data[0..6].clone_from_slice(&arp_request[6..12]);
     // set source MAC to MAC address of this device
-    pkt_data[6..12].clone_from_slice(&dev.get_mac_addr());
+    pkt_data[6..12].clone_from_slice(&MY_MAC);
     // set sender MAC to MAC address of this device
-    pkt_data[22..28].clone_from_slice(&dev.get_mac_addr());
+    pkt_data[22..28].clone_from_slice(&MY_MAC);
     // set target MAC to source MAC address of the ARP request
     pkt_data[32..38].clone_from_slice(&arp_request[6..12]);
     // set the target IP to source IP address of the ARP request
@@ -210,7 +210,7 @@ fn send_echo_reply(ping: &[u8], dev: &mut Box<dyn IxyDevice>) {
     pkt_data[0..6].clone_from_slice(&ping[6..12]); // source MAC of the ping
 
     // source MAC
-    pkt_data[6..12].clone_from_slice(&dev.get_mac_addr()); // my MAC
+    pkt_data[6..12].clone_from_slice(&MY_MAC); // my MAC
 
     // length
     pkt_data[16..18].clone_from_slice(&ping[16..18]); // equivalent to ping length
