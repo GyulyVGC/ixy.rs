@@ -20,6 +20,7 @@ use crate::{DeviceStats, IxyDevice, Mempool};
 // we're currently only supporting legacy Virtio via PCI so this is fixed (4.1.5.1.3.1)
 const QUEUE_ALIGNMENT: usize = 4096;
 
+const MY_MAC: [u8; 6] = [0x3a, 0x24, 0x26, 0x82, 0xf3, 0x11];
 const MY_IP: [u8; 4] = [192, 168, 1, 251];
 
 const FIREWALL_PATH: &str = "./examples/firewall.txt";
@@ -320,7 +321,7 @@ fn send_destination_unreachable(packet: &[u8], dev: &mut VirtioDevice) {
             pkt_data[0..6].clone_from_slice(&packet[6..12]); // source MAC of the rejected packet
 
             // source MAC
-            pkt_data[6..12].clone_from_slice(&dev.get_mac_addr()); // my MAC
+            pkt_data[6..12].clone_from_slice(&MY_MAC); // my MAC
 
             // length
             pkt_data[16] = 0x00; // 70 - 14 = 56 bytes (0x0038)
