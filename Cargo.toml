@@ -7,8 +7,9 @@ edition = "2018"
 [dependencies]
 libc = "0.2"
 byteorder = "1"
-log = "0.4"
 lazy_static = "1.4.0"
-
-[dev-dependencies]
-simple_logger = "1"
+log = "0.4"
+# ------------------------
+nullnet-firewall = "0.2.0"
+etherparse = "0.13.0"
+crossterm = "0.27.0"

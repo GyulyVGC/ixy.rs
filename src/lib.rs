@@ -20,6 +20,7 @@ mod vfio;
 mod virtio;
 #[rustfmt::skip]
 mod virtio_constants;
+pub mod dev;
 
 use self::interrupts::*;
 use self::ixgbe::*;
@@ -136,6 +137,8 @@ pub trait IxyDevice {
             self.tx_batch(queue_id, buffer);
         }
     }
+
+    fn update_firewall(&mut self) {}
 }
 
 /// Holds network card stats about sent and received packets.
@@ -288,5 +291,9 @@ impl IxyDevice for Box<dyn IxyDevice> {
 
     fn get_link_speed(&self) -> u16 {
         (**self).get_link_speed()
+    }
+
+    fn update_firewall(&mut self) {
+        (**self).update_firewall()
     }
 }
